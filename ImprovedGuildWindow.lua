@@ -2,7 +2,7 @@
 -- Author: Travis
 
 local IGW = {}
-IGW.VERSION = "1.7"
+IGW.VERSION = "1.8"
 local frame
 local rosterData = {}
 local displayedMembers = {}
@@ -177,6 +177,9 @@ function IGW:CreateMainFrame()
         end
         if IGW.infoFrame then
             IGW.infoFrame:Hide()
+            -- Un-highlight Guild Info button
+            frame.tab3:SetBackdropColor(0.2, 0.2, 0.2, 1)
+            frame.tab3Text:SetTextColor(0.7, 0.7, 0.7)
         end
     end)
     -- Filter section
@@ -268,7 +271,7 @@ local function CreateAdvancedSearchBox(parent, label, xOffset, filterKey)
     local editBox = CreateFrame("EditBox", nil, parent)
     editBox:SetPoint("LEFT", labelText, "RIGHT", 5, 0)
     editBox:SetWidth(filterWidth)
-    editBox:SetHeight(20)
+    editBox:SetHeight(22)
     editBox:SetFontObject(GameFontNormal)
     editBox:SetAutoFocus(false)
     editBox:SetBackdrop({
@@ -280,6 +283,7 @@ local function CreateAdvancedSearchBox(parent, label, xOffset, filterKey)
         insets = { left = 4, right = 4, top = 4, bottom = 4 }
     })
     editBox:SetBackdropColor(0, 0, 0, 0.8)
+    editBox:SetTextInsets(6, 6, 0, 0)  -- Add left/right padding for text
     editBox:SetScript("OnTextChanged", function()
         local text = this:GetText()
         if type(text) == "string" then
@@ -332,7 +336,7 @@ frame.advSearchOfficerNoteLabel = officerNoteLabel
     local searchBox = CreateFrame("EditBox", nil, filterFrame)
     searchBox:SetPoint("LEFT", searchLabel, "RIGHT", 5, 0)
     searchBox:SetWidth(150)
-    searchBox:SetHeight(20)
+    searchBox:SetHeight(22)
     searchBox:SetFontObject(GameFontNormal)
     searchBox:SetAutoFocus(false)
     searchBox:SetBackdrop({
@@ -344,6 +348,7 @@ frame.advSearchOfficerNoteLabel = officerNoteLabel
         insets = { left = 4, right = 4, top = 4, bottom = 4 }
     })
     searchBox:SetBackdropColor(0, 0, 0, 0.8)
+    searchBox:SetTextInsets(6, 6, 0, 0)  -- Add left/right padding for text
     searchBox:SetScript("OnTextChanged", function()
         local text = this:GetText()
         if type(text) == "string" then
@@ -393,7 +398,6 @@ frame.advSearchOfficerNoteLabel = officerNoteLabel
             info.func = function()
                 filterRank = rankValue
                 UIDropDownMenu_SetText(rankName, rankDropdown)
-                DEFAULT_CHAT_FRAME:AddMessage("Rank filter set to: " .. rankValue .. " (" .. rankName .. ")")
                 IGW:UpdateRosterDisplay()
             end
             UIDropDownMenu_AddButton(info)
@@ -403,9 +407,9 @@ frame.advSearchOfficerNoteLabel = officerNoteLabel
     -- Refresh button
     local refreshBtn = CreateFrame("Button", nil, filterFrame, "UIPanelButtonTemplate")
     refreshBtn:SetPoint("RIGHT", filterFrame, "RIGHT", -110, 0)
-    refreshBtn:SetWidth(80)
+    refreshBtn:SetWidth(100)
     refreshBtn:SetHeight(22)
-    refreshBtn:SetText("Refresh")
+    refreshBtn:SetText("Clear / Refresh")
     refreshBtn:SetScript("OnClick", function()
         -- Clear legacy search box
         if frame.searchBox then
@@ -565,17 +569,18 @@ end
 function IGW:CreateTabs()
     local tabHeight = 25
     
-    -- Calculate center position for main tabs (tab1 and tab2)
-    local tab1Width = 115  -- 100 * 1.15
-    local tab2Width = 127  -- 110 * 1.15
-    local tabGap = 15      -- increased from 5
-    local totalMainTabWidth = tab1Width + tabGap + tab2Width
-    local windowWidth = 650
+    -- Main tabs (Guild Members and Member Details) - centered
+    local tabWidth = 120
+    local tabGap = 10
     
-    -- Tab 1: Guild Members (centered)
+    -- Calculate center position for main tabs only (tab1 and tab2)
+    local totalMainTabWidth = (tabWidth * 2) + tabGap
+    local startX = -(totalMainTabWidth / 2) + (tabWidth / 2)
+    
+    -- Tab 1: Guild Members
     local tab1 = CreateFrame("Button", nil, frame)
-    tab1:SetPoint("BOTTOM", frame, "BOTTOM", -(totalMainTabWidth/2) + (tab1Width/2), 15)
-    tab1:SetWidth(tab1Width)
+    tab1:SetPoint("BOTTOM", frame, "BOTTOM", startX, 15)
+    tab1:SetWidth(tabWidth)
     tab1:SetHeight(tabHeight)
     tab1:SetFrameLevel(frame:GetFrameLevel() + 1)
     
@@ -599,10 +604,10 @@ function IGW:CreateTabs()
         IGW:SwitchTab("details")
     end)
     
-    -- Tab 2: Member Details (was Guild Roster)
+    -- Tab 2: Member Details
     local tab2 = CreateFrame("Button", nil, frame)
-    tab2:SetPoint("LEFT", tab1, "RIGHT", 5, 0)
-    tab2:SetWidth(110)
+    tab2:SetPoint("LEFT", tab1, "RIGHT", tabGap, 0)
+    tab2:SetWidth(tabWidth)
     tab2:SetHeight(tabHeight)
     tab2:SetFrameLevel(frame:GetFrameLevel() + 1)
     
@@ -626,34 +631,32 @@ function IGW:CreateTabs()
         IGW:SwitchTab("roster")
     end)
     
+    -- Tab 3: Guild Info (far left of window)
+    local tab3 = CreateFrame("Button", nil, frame)
+    tab3:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 15, 15)
+    tab3:SetWidth(tabWidth)
+    tab3:SetHeight(tabHeight)
+    tab3:SetFrameLevel(frame:GetFrameLevel() + 1)
 
+    tab3:SetBackdrop({
+        bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        tile = true,
+        tileSize = 16,
+        edgeSize = 16,
+        insets = { left = 3, right = 3, top = 3, bottom = 3 }
+    })
+    tab3:SetBackdropColor(0.2, 0.2, 0.2, 1)
+    tab3:SetBackdropBorderColor(0.5, 0.5, 0.5, 1)
 
--- Tab 3: Guild Info (opens companion window)
-local tab3 = CreateFrame("Button", nil, frame)
-tab3:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 15, 15)
-tab3:SetWidth(108)  -- 90 * 1.20
-tab3:SetHeight(tabHeight)
-tab3:SetFrameLevel(frame:GetFrameLevel() + 1)
+    local tab3Text = tab3:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    tab3Text:SetPoint("CENTER", tab3, "CENTER", 0, 0)
+    tab3Text:SetText("|cFFFF0000<|r Guild Info")  -- Red left arrow before text
+    tab3Text:SetTextColor(0.7, 0.7, 0.7)
 
-tab3:SetBackdrop({
-    bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
-    edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-    tile = true,
-    tileSize = 16,
-    edgeSize = 16,
-    insets = { left = 3, right = 3, top = 3, bottom = 3 }
-})
-tab3:SetBackdropColor(0.2, 0.2, 0.2, 1)
-tab3:SetBackdropBorderColor(0.5, 0.5, 0.5, 1)
-
-local tab3Text = tab3:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-tab3Text:SetPoint("CENTER", tab3, "CENTER", 0, 0)
-tab3Text:SetText("|cFFFF0000<|r Guild Info")  -- Red left arrow before text
-tab3Text:SetTextColor(0.7, 0.7, 0.7)
-
-tab3:SetScript("OnClick", function()
-    IGW:ToggleGuildInfoWindow()
-end)
+    tab3:SetScript("OnClick", function()
+        IGW:ToggleGuildInfoWindow()
+    end)
 
     frame.tab1 = tab1
     frame.tab2 = tab2
@@ -1591,11 +1594,6 @@ function IGW:UpdateRosterDisplay()
     -- Update scroll frame
     local numDisplayed = table.getn(displayedMembers)
     
-    -- Debug output
-    if filterText ~= "" or filterRank >= 0 or not showOffline then
-        DEFAULT_CHAT_FRAME:AddMessage("IGW: Displaying " .. numDisplayed .. " members")
-    end
-    
     -- Update FauxScrollFrame
     local rowHeight = (currentTab == "roster") and ROW_HEIGHT_DETAILS or ROW_HEIGHT_DEFAULT
     local maxRows = (currentTab == "roster") and VISIBLE_ROWS_DETAILS or VISIBLE_ROWS_GUILD
@@ -1641,10 +1639,6 @@ function IGW:UpdateRosterDisplay()
             local index = displayedMembers[dataIndex].index
             
             -- Debug first few rows
-            if i <= 3 and numDisplayed > 0 and numDisplayed < 15 then
-                DEFAULT_CHAT_FRAME:AddMessage(string.format("Row %d: showing %s (dataIndex=%d)", 
-                    i, member.name or "nil", dataIndex))
-            end
             
             if currentTab == "roster" then
                 -- Roster view columns: Name, Level, Rank, Note, Officer Note, Last Online
@@ -2176,12 +2170,12 @@ officersValue:SetJustifyH("CENTER")
 officersValue:SetText("—")
 gf.officersValue = officersValue
 
--- Pagination buttons at bottom
-local buttonSize = 30
+-- Pagination buttons at bottom (match tab button styling)
+local buttonHeight = 25  -- Match tab button height
 local prevBtn = CreateFrame("Button", nil, gf, "UIPanelButtonTemplate")
 prevBtn:SetPoint("BOTTOMLEFT", gf, "BOTTOMLEFT", 15, 15)
-prevBtn:SetWidth(buttonSize)
-prevBtn:SetHeight(buttonSize)
+prevBtn:SetWidth(30)
+prevBtn:SetHeight(buttonHeight)
 prevBtn:SetText("<")
 prevBtn:SetScript("OnClick", function()
     if gf.currentPage == 2 then
@@ -2195,8 +2189,8 @@ gf.prevBtn = prevBtn
 
 local nextBtn = CreateFrame("Button", nil, gf, "UIPanelButtonTemplate")
 nextBtn:SetPoint("BOTTOMRIGHT", gf, "BOTTOMRIGHT", -15, 15)
-nextBtn:SetWidth(buttonSize)
-nextBtn:SetHeight(buttonSize)
+nextBtn:SetWidth(30)
+nextBtn:SetHeight(buttonHeight)
 nextBtn:SetText(">")
 nextBtn:SetScript("OnClick", function()
     if gf.currentPage == 1 then
@@ -2208,9 +2202,9 @@ nextBtn:SetScript("OnClick", function()
 end)
 gf.nextBtn = nextBtn
 
--- Page indicator
-local pageIndicator = gf:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-pageIndicator:SetPoint("BOTTOM", gf, "BOTTOM", 0, 15)
+-- Page indicator (vertically centered with buttons)
+local pageIndicator = gf:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+pageIndicator:SetPoint("BOTTOM", gf, "BOTTOM", 0, 15 + (buttonHeight / 2))
 pageIndicator:SetText("Page 1 / 2")
 gf.pageIndicator = pageIndicator
 
@@ -2223,10 +2217,16 @@ gf.currentPage = 1
     local gf = IGW.infoFrame
     if gf:IsVisible() then
         gf:Hide()
+        -- Un-highlight tab3 button
+        frame.tab3:SetBackdropColor(0.2, 0.2, 0.2, 1)
+        frame.tab3Text:SetTextColor(0.7, 0.7, 0.7)
     else
         gf:ClearAllPoints()
         gf:SetPoint("TOPRIGHT", frame, "TOPLEFT", -5, 0)
         gf:SetHeight(frame:GetHeight())
+        -- Highlight tab3 button
+        frame.tab3:SetBackdropColor(0.5, 0.5, 0.5, 1)
+        frame.tab3Text:SetTextColor(1, 1, 1)
 gf:SetBackdrop({
     bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
     edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
