@@ -12,7 +12,7 @@ Enhanced guild management for World of Warcraft 1.12.1 (Turtle WoW).
    
 ## Quick Start
 
-**Open:** Shift+O (or `/igw`)  Check Keybinds Settings if it's not opening
+**/igw to open window or set a Keybind in WoW settings
 **Close:** ESC or click X
 
 ## Main Features
@@ -35,7 +35,7 @@ Click "Advanced Search" to reveal individual search boxes:
 Click any member to open:
 - Full member information
 - Edit public/officer notes (if permitted)
-- Other Characters list (bidirectional alt detection)
+- Other Characters list (Alts need player notes for this to work ex. Alt of Olzon)
 - Whisper and Invite buttons
 
 ### Guild Info Window (Left Panel)
