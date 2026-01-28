@@ -22,13 +22,23 @@ An enhanced guild management window for World of Warcraft 1.12.1 (Turtle WoW).
 - **Member Details Window**: Right-side popup showing detailed member info
   - Name, Level, Class, Rank, Zone, Status
   - Public and Officer notes (clickable to edit)
-  - Whisper and Invite buttons
+  - **Alt Detection**: Automatically finds and displays alts
+    - Searches public notes for "alt" + player name
+    - Shows comma-separated list of detected alts
+    - Hidden when no alts are found
+  - Whisper and Invite to Group buttons
   - Professional dividers separating sections
 - **Guild Info Window**: Left-side companion window with guild statistics
-  - Guild name and member counts
-  - Class distribution
-  - Message of the Day
-  - Guild information text
+  - **Page 1**: Guild overview
+    - Guild name and total member count
+    - Message of the Day
+    - Guild information text
+  - **Page 2**: Statistics and analytics
+    - Color-coded class distribution bar graph
+    - Level 60 character count
+    - Top 5 zones where online members are located
+    - Officers Online list
+  - Navigation arrows at bottom to switch between pages
   - Opens via "< Guild Info" button (red arrow indicator)
 
 ### Filtering & Sorting
@@ -104,9 +114,36 @@ An enhanced guild management window for World of Warcraft 1.12.1 (Turtle WoW).
 
 ## Version
 
-**1.4** - Stable release with per-tab defaults and companion windows
+**1.6** - Stable release with enhanced Guild Info pages
 
 ## Changelog
+
+### 1.6
+- **Guild Info Pagination**: Two-page system with navigation arrows
+  - Page 1: Guild overview (Name, Total Members, MOTD, Guild Info)
+  - Page 2: Statistics (Class Distribution, Level 60s, Zones, Officers Online)
+- **Visual Class Distribution**: Color-coded bar graph using class colors
+- **Enhanced Statistics**:
+  - Level 60 character count
+  - Top 5 zones where online members are located
+  - Officers Online list (Guild Master, Officer, Officer-Alt ranks)
+- **Improved Alt Detection**: Exact word matching prevents false matches
+  - "Nar" no longer matches "Nargaron"
+- **UI Refinements**: Optimized spacing on page 2 to fit all content
+
+### 1.5
+- **Alt Detection**: Member Details window now shows detected alts
+  - Searches public notes for "alt" + player name
+  - Auto-hides section when no alts found
+- **UI Improvements**:
+  - Opens to Guild Members tab by default
+  - Member count shows "X Online | Y Total"
+  - Invite button renamed to "Invite to Group"
+  - Officer Note section hidden for non-officers
+  - Full-width dividers in companion windows
+- **Bug Fixes**:
+  - Improved scroll behavior to prevent over-scrolling
+  - Better handling of empty sections
 
 ### 1.4
 - **Per-tab defaults**: Each tab now has default sorting and offline visibility

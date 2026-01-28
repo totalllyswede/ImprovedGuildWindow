@@ -1,8 +1,8 @@
 ## Interface: 11200
 ## Title: Improved Guild Window
 ## Notes: Enhanced guild management window for Turtle WoW
-## Author: Travis
-## Version: 1.2
+## Author: Olzon
+## Version: 1.6
 ## SavedVariables: ImprovedGuildWindowDB
 
 Bindings.xml

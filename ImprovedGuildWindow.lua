@@ -2,7 +2,7 @@
 -- Author: Travis
 
 local IGW = {}
-IGW.VERSION = "1.4"
+IGW.VERSION = "1.6"
 local frame
 local rosterData = {}
 local displayedMembers = {}
@@ -189,7 +189,7 @@ function IGW:CreateMainFrame()
     -- Member count - position above tabs, below roster
     local memberCount = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
     memberCount:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 20, 45)
-    memberCount:SetText("Members: 0 Online / 0 Total")
+    memberCount:SetText("0 Online | 0 Total")
     frame.memberCount = memberCount
     
     -- Restore saved position or set default
@@ -932,8 +932,8 @@ function IGW:ShowMemberDetails(index)
         -- Divider 1 (after status info)
         local div1 = df:CreateTexture(nil, "ARTWORK")
         div1:SetTexture("Interface\\DialogFrame\\UI-DialogBox-Divider")
-        div1:SetPoint("TOPLEFT", df, "TOPLEFT", leftX, yOffset)
-        div1:SetWidth(210)  -- 250 - 40px padding
+        div1:SetPoint("TOP", df, "TOP", 36, yOffset)
+        div1:SetWidth(300)
         div1:SetHeight(16)
         df.div1 = div1
         
@@ -1018,12 +1018,11 @@ end)
 
 yOffset = yOffset - 48
 
-
-        -- Divider 2 (after notes)
+        -- Divider 2 (after officer notes)
         local div2 = df:CreateTexture(nil, "ARTWORK")
         div2:SetTexture("Interface\\DialogFrame\\UI-DialogBox-Divider")
-        div2:SetPoint("TOPLEFT", df, "TOPLEFT", leftX, yOffset)
-        div2:SetWidth(210)  -- 250 - 40px padding
+        div2:SetPoint("TOP", df, "TOP", 36, yOffset)
+        div2:SetWidth(300)
         div2:SetHeight(16)
         df.div2 = div2
         
@@ -1032,12 +1031,13 @@ yOffset = yOffset - 48
         -- Whisper + Invite buttons (even spacing)
 local buttonYGap = 8
 local buttonGap = 10
-local buttonWidth = 100
+local whisperWidth = 80
+local inviteWidth = 120
 local buttonHeight = 22
 
 local whisperBtn = CreateFrame("Button", nil, df, "UIPanelButtonTemplate")
 whisperBtn:SetPoint("TOPLEFT", df, "TOPLEFT", leftX, yOffset)
-whisperBtn:SetWidth(buttonWidth)
+whisperBtn:SetWidth(whisperWidth)
 whisperBtn:SetHeight(buttonHeight)
 whisperBtn:SetFrameLevel(df:GetFrameLevel() + 1)
 whisperBtn:SetText("Whisper")
@@ -1050,10 +1050,10 @@ df.whisperBtn = whisperBtn
 
 local inviteBtn = CreateFrame("Button", nil, df, "UIPanelButtonTemplate")
 inviteBtn:SetPoint("LEFT", whisperBtn, "RIGHT", buttonGap, 0)
-inviteBtn:SetWidth(buttonWidth)
+inviteBtn:SetWidth(inviteWidth)
 inviteBtn:SetHeight(buttonHeight)
 inviteBtn:SetFrameLevel(df:GetFrameLevel() + 1)
-inviteBtn:SetText("Invite")
+inviteBtn:SetText("Invite to Group")
 inviteBtn:SetScript("OnClick", function()
     if df.memberName then
         InviteByName(df.memberName)
@@ -1062,6 +1062,31 @@ end)
 df.inviteBtn = inviteBtn
 
 yOffset = yOffset - (buttonHeight + buttonYGap)
+
+        -- Divider 3 (after buttons)
+        local div3 = df:CreateTexture(nil, "ARTWORK")
+        div3:SetTexture("Interface\\DialogFrame\\UI-DialogBox-Divider")
+        div3:SetPoint("TOP", df, "TOP", 36, yOffset)
+        div3:SetWidth(300)
+        div3:SetHeight(16)
+        df.div3 = div3
+        
+        yOffset = yOffset - 16
+        
+        -- Alts section
+        local altsLabel = df:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        altsLabel:SetPoint("TOPLEFT", df, "TOPLEFT", leftX, yOffset)
+        altsLabel:SetText("Alts:")
+        df.altsLabel = altsLabel
+        
+        yOffset = yOffset - 18
+        
+        local altsValue = df:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        altsValue:SetPoint("TOPLEFT", df, "TOPLEFT", leftX, yOffset)
+        altsValue:SetWidth(210)
+        altsValue:SetJustifyH("LEFT")
+        altsValue:SetText("—")
+        df.altsValue = altsValue
 
         IGW.detailsFrame = df
     end
@@ -1100,8 +1125,49 @@ yOffset = yOffset - (buttonHeight + buttonYGap)
         df.officerNoteValue:Show()
         df.officerNoteValue:SetText(member.officernote or "")
     else
+        -- Hide officer note section when user can't view
         df.officerNoteLabel:Hide()
         df.officerNoteValue:Hide()
+    end
+    
+    -- Find alts: search for members with "alt" and this player's name in their public note
+    local alts = {}
+    local searchName = string.lower(member.name or "")
+    
+    for _, guildMember in ipairs(rosterData) do
+        if guildMember.name ~= member.name and guildMember.note then
+            local note = string.lower(guildMember.note)
+            -- Check if note contains "alt" and the exact player's name as a whole word
+            -- Use word boundaries: spaces, punctuation, start/end of string
+            local pattern = "[%s%p]?" .. searchName .. "[%s%p]?"
+            local hasAlt = string.find(note, "alt")
+            local hasExactName = false
+            
+            -- Check for exact match with word boundaries
+            if string.find(note, "^" .. searchName .. "[%s%p]") or  -- Start of string
+               string.find(note, "[%s%p]" .. searchName .. "$") or  -- End of string
+               string.find(note, "[%s%p]" .. searchName .. "[%s%p]") or  -- Middle
+               note == searchName then  -- Exact match only
+                hasExactName = true
+            end
+            
+            if hasAlt and hasExactName then
+                table.insert(alts, guildMember.name)
+            end
+        end
+    end
+    
+    -- Display alts
+    if table.getn(alts) > 0 then
+        df.altsLabel:Show()
+        df.altsValue:Show()
+        df.div3:Show()
+        df.altsValue:SetText(table.concat(alts, ", "))
+    else
+        -- Hide alts section when no alts found
+        df.altsLabel:Hide()
+        df.altsValue:Hide()
+        df.div3:Hide()
     end
     -- Position to the right of main window with 5px gap, same top alignment
     df:ClearAllPoints()
@@ -1345,8 +1411,22 @@ function IGW:UpdateRosterDisplay()
     -- Update FauxScrollFrame
     local rowHeight = (currentTab == "roster") and ROW_HEIGHT_DETAILS or ROW_HEIGHT_DEFAULT
     local maxRows = (currentTab == "roster") and VISIBLE_ROWS_DETAILS or VISIBLE_ROWS_GUILD
-    FauxScrollFrame_Update(frame.rosterScroll, numDisplayed, maxRows, rowHeight)
+    
+    -- Ensure we don't have more scroll range than needed
+    -- If we have fewer items than visible rows, no scrolling needed
+    local scrollItems = numDisplayed
+    if numDisplayed <= maxRows then
+        scrollItems = maxRows  -- Set to maxRows to disable scrolling
+    end
+    
+    FauxScrollFrame_Update(frame.rosterScroll, scrollItems, maxRows, rowHeight)
     local offset = FauxScrollFrame_GetOffset(frame.rosterScroll)
+    
+    -- Safety clamp: ensure offset doesn't exceed valid range
+    local maxOffset = math.max(0, numDisplayed - maxRows)
+    if offset > maxOffset then
+        offset = maxOffset
+    end
     
 
     local headerTopY = IGW_GetHeaderTopY()
@@ -1486,14 +1566,19 @@ function IGW:UpdateRosterDisplay()
         end
     end
     
-    -- Update member count with online status
+    -- Update member count with online and total
     local onlineCount = 0
+    local totalMembers = table.getn(rosterData)
+    
     for _, m in ipairs(rosterData) do
         if m.online then
             onlineCount = onlineCount + 1
         end
     end
-    frame.memberCount:SetText(onlineCount .. " Online / " .. table.getn(rosterData) .. " Total")
+    
+    if frame.memberCount then
+        frame.memberCount:SetText(string.format("%d Online | %d Total", onlineCount, totalMembers))
+    end
 end
 
 -- Toggle window visibility
@@ -1511,6 +1596,8 @@ function IGW:ToggleWindow()
     else
         if IsInGuild() then
             GuildRoster()
+            -- Switch to Guild Members tab (details) when opening
+            self:SwitchTab("details")
             frame:Show()
             self:UpdateRosterDisplay()
         else
@@ -1564,12 +1651,24 @@ function IGW:UpdateGuildInfoWindow()
     if gf.infoValue then
         gf.infoValue:SetText(infoText)
     end
-
-    -- Class distribution (from rosterData)
+    
+    -- Class distribution (from rosterData) - Bar Graph
+    -- Clear existing bars
+    if gf.classBars then
+        for _, bar in ipairs(gf.classBars) do
+            bar.frame:Hide()
+        end
+        gf.classBars = {}
+    end
+    
     local counts = {}
+    local maxCount = 0
     for _, m in ipairs(rosterData or {}) do
         if m and m.class then
             counts[m.class] = (counts[m.class] or 0) + 1
+            if counts[m.class] > maxCount then
+                maxCount = counts[m.class]
+            end
         end
     end
 
@@ -1584,17 +1683,108 @@ function IGW:UpdateGuildInfoWindow()
         return a.c > b.c
     end)
 
-    local distLines = {}
-    for _, e in ipairs(entries) do
-        table.insert(distLines, string.format("%s: %d", e.cls, e.c))
+    -- Create bars
+    local barHeight = 12
+    local barGap = 2
+    local maxBarWidth = 180
+    local yOffset = 0
+    
+    for i, e in ipairs(entries) do
+        if i > 10 then break end -- Limit to top 10 classes
+        
+        local barFrame = CreateFrame("Frame", nil, gf.classBarsContainer)
+        barFrame:SetPoint("TOPLEFT", gf.classBarsContainer, "TOPLEFT", 0, yOffset)
+        barFrame:SetHeight(barHeight)
+        
+        -- Calculate bar width based on count
+        local barWidth = maxCount > 0 and (e.c / maxCount) * maxBarWidth or 0
+        barFrame:SetWidth(barWidth)
+        
+        -- Bar background with class color
+        local color = CLASS_COLORS[e.cls] or {r=0.5, g=0.5, b=0.5}
+        local barBg = barFrame:CreateTexture(nil, "BACKGROUND")
+        barBg:SetAllPoints(barFrame)
+        barBg:SetTexture("Interface\\TargetingFrame\\UI-StatusBar")
+        barBg:SetVertexColor(color.r, color.g, color.b, 0.8)
+        
+        -- Label (class name and count)
+        local label = barFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        label:SetPoint("LEFT", barFrame, "LEFT", 3, 0)
+        label:SetText(string.format("%s: %d", e.cls, e.c))
+        label:SetTextColor(1, 1, 1)
+        
+        table.insert(gf.classBars, {frame=barFrame, bg=barBg, label=label})
+        
+        yOffset = yOffset - (barHeight + barGap)
     end
-    local distText = table.concat(distLines, "   ")
-    if distText == "" then
-        distText = "—"
+    
+    -- Level 60 count
+    local level60Count = 0
+    for _, m in ipairs(rosterData or {}) do
+        if m and m.level == 60 then
+            level60Count = level60Count + 1
+        end
     end
-
-    if gf.classDistValue then
-        gf.classDistValue:SetText(distText)
+    if gf.level60Value then
+        gf.level60Value:SetText(tostring(level60Count))
+    end
+    
+    -- Zone distribution (online members only)
+    local zoneCounts = {}
+    for _, m in ipairs(rosterData or {}) do
+        if m and m.online and m.zone and m.zone ~= "" then
+            zoneCounts[m.zone] = (zoneCounts[m.zone] or 0) + 1
+        end
+    end
+    
+    local zoneEntries = {}
+    for zone, count in pairs(zoneCounts) do
+        table.insert(zoneEntries, {zone=zone, count=count})
+    end
+    table.sort(zoneEntries, function(a,b)
+        if a.count == b.count then
+            return a.zone < b.zone
+        end
+        return a.count > b.count
+    end)
+    
+    local zoneLines = {}
+    local maxZones = 5
+    for i, e in ipairs(zoneEntries) do
+        if i > maxZones then break end
+        table.insert(zoneLines, string.format("%s: %d", e.zone, e.count))
+    end
+    local zoneText = table.concat(zoneLines, "\n")
+    if zoneText == "" then
+        zoneText = "No members online"
+    end
+    
+    if gf.zonesValue then
+        gf.zonesValue:SetText(zoneText)
+    end
+    
+    -- Officers Online (Guild Master, Officer, Officer-Alt ranks)
+    local onlineOfficers = {}
+    for _, m in ipairs(rosterData or {}) do
+        if m and m.online and m.rank then
+            local rankLower = string.lower(m.rank)
+            if string.find(rankLower, "guild master") or 
+               string.find(rankLower, "officer") then
+                table.insert(onlineOfficers, m.name)
+            end
+        end
+    end
+    
+    local officersText = ""
+    if table.getn(onlineOfficers) > 0 then
+        table.sort(onlineOfficers)
+        officersText = table.concat(onlineOfficers, "\n")
+    else
+        officersText = "No officers online"
+    end
+    
+    if gf.officersValue then
+        gf.officersValue:SetText(officersText)
     end
 end
 
@@ -1670,37 +1860,16 @@ totalMembersText:SetJustifyH("CENTER")
 totalMembersText:SetText("Total Members: 0")
 gf.totalMembersText = totalMembersText
 
--- Divider (subtle)
+-- Divider 1 (after total members)
 local div1 = content:CreateTexture(nil, "ARTWORK")
 div1:SetTexture("Interface\\DialogFrame\\UI-DialogBox-Divider")
-div1:SetPoint("TOP", totalMembersText, "BOTTOM", 0, -12)
-div1:SetWidth(226)  -- 250 - 24px padding (12px each side)
+div1:SetPoint("TOP", totalMembersText, "BOTTOM", 36, -12)
+div1:SetWidth(300)
 div1:SetHeight(16)
 
--- Class distribution
-local classLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-classLabel:SetPoint("TOP", div1, "BOTTOM", 0, -10)
-classLabel:SetJustifyH("CENTER")
-classLabel:SetText("Class Distribution")
-gf.classLabel = classLabel
-
-local classDistValue = content:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-classDistValue:SetPoint("TOP", classLabel, "BOTTOM", 0, -6)
-classDistValue:SetWidth(210)
-classDistValue:SetJustifyH("CENTER")
-classDistValue:SetText("—")
-gf.classDistValue = classDistValue
-
--- Divider
-local div2 = content:CreateTexture(nil, "ARTWORK")
-div2:SetTexture("Interface\\DialogFrame\\UI-DialogBox-Divider")
-div2:SetPoint("TOP", classDistValue, "BOTTOM", 0, -12)
-div2:SetWidth(226)  -- 250 - 24px padding (12px each side)
-div2:SetHeight(16)
-
 -- MOTD
-local motdLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-motdLabel:SetPoint("TOP", div2, "BOTTOM", 0, -10)
+local motdLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+motdLabel:SetPoint("TOP", div1, "BOTTOM", -36, -10)
 motdLabel:SetJustifyH("CENTER")
 motdLabel:SetText("Message of the Day")
 gf.motdLabel = motdLabel
@@ -1712,16 +1881,16 @@ motdValue:SetJustifyH("CENTER")
 motdValue:SetText("—")
 gf.motdValue = motdValue
 
--- Divider
-local div3 = content:CreateTexture(nil, "ARTWORK")
-div3:SetTexture("Interface\\DialogFrame\\UI-DialogBox-Divider")
-div3:SetPoint("TOP", motdValue, "BOTTOM", 0, -12)
-div3:SetWidth(226)  -- 250 - 24px padding (12px each side)
-div3:SetHeight(16)
+-- Divider 2 (after MOTD)
+local div2 = content:CreateTexture(nil, "ARTWORK")
+div2:SetTexture("Interface\\DialogFrame\\UI-DialogBox-Divider")
+div2:SetPoint("TOP", motdValue, "BOTTOM", 36, -12)
+div2:SetWidth(300)
+div2:SetHeight(16)
 
 -- Guild Information
-local infoLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-infoLabel:SetPoint("TOP", div3, "BOTTOM", 0, -10)
+local infoLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+infoLabel:SetPoint("TOP", div2, "BOTTOM", -36, -10)
 infoLabel:SetJustifyH("CENTER")
 infoLabel:SetText("Guild Information")
 gf.infoLabel = infoLabel
@@ -1732,6 +1901,134 @@ infoValue:SetWidth(210)
 infoValue:SetJustifyH("CENTER")
 infoValue:SetText("—")
 gf.infoValue = infoValue
+
+-- Page 2 content frame (hidden by default)
+local content2 = CreateFrame("Frame", nil, gf)
+content2:SetPoint("TOPLEFT", gf, "TOPLEFT", 20, -50)
+content2:SetPoint("BOTTOMRIGHT", gf, "BOTTOMRIGHT", -20, 50)
+content2:Hide()
+gf.content2 = content2
+
+-- Page 2 - Class Distribution
+local classLabel = content2:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+classLabel:SetPoint("TOP", content2, "TOP", 0, 0)
+classLabel:SetJustifyH("CENTER")
+classLabel:SetText("Class Distribution")
+gf.classLabel = classLabel
+
+-- Container for class bars (reduced height)
+local classBarsContainer = CreateFrame("Frame", nil, content2)
+classBarsContainer:SetPoint("TOP", classLabel, "BOTTOM", 0, -8)
+classBarsContainer:SetWidth(210)
+classBarsContainer:SetHeight(120)
+gf.classBarsContainer = classBarsContainer
+
+-- Store bars for updating
+gf.classBars = {}
+
+-- Divider
+local page2Div1 = content2:CreateTexture(nil, "ARTWORK")
+page2Div1:SetTexture("Interface\\DialogFrame\\UI-DialogBox-Divider")
+page2Div1:SetPoint("TOP", classBarsContainer, "BOTTOM", 36, -8)
+page2Div1:SetWidth(300)
+page2Div1:SetHeight(16)
+
+-- Level 60s Count
+local level60Label = content2:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+level60Label:SetPoint("TOP", page2Div1, "BOTTOM", -36, -8)
+level60Label:SetJustifyH("CENTER")
+level60Label:SetText("Level 60 Characters")
+gf.level60Label = level60Label
+
+local level60Value = content2:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+level60Value:SetPoint("TOP", level60Label, "BOTTOM", 0, -4)
+level60Value:SetWidth(210)
+level60Value:SetJustifyH("CENTER")
+level60Value:SetText("—")
+gf.level60Value = level60Value
+
+-- Divider
+local page2Div2 = content2:CreateTexture(nil, "ARTWORK")
+page2Div2:SetTexture("Interface\\DialogFrame\\UI-DialogBox-Divider")
+page2Div2:SetPoint("TOP", level60Value, "BOTTOM", 36, -8)
+page2Div2:SetWidth(300)
+page2Div2:SetHeight(16)
+
+-- Current Zones
+local zonesLabel = content2:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+zonesLabel:SetPoint("TOP", page2Div2, "BOTTOM", -36, -8)
+zonesLabel:SetJustifyH("CENTER")
+zonesLabel:SetText("Current Zones (Online)")
+gf.zonesLabel = zonesLabel
+
+local zonesValue = content2:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+zonesValue:SetPoint("TOP", zonesLabel, "BOTTOM", 0, -4)
+zonesValue:SetWidth(210)
+zonesValue:SetJustifyH("CENTER")
+zonesValue:SetText("—")
+gf.zonesValue = zonesValue
+
+-- Divider
+local page2Div3 = content2:CreateTexture(nil, "ARTWORK")
+page2Div3:SetTexture("Interface\\DialogFrame\\UI-DialogBox-Divider")
+page2Div3:SetPoint("TOP", zonesValue, "BOTTOM", 36, -8)
+page2Div3:SetWidth(300)
+page2Div3:SetHeight(16)
+
+-- Officers Online
+local officersLabel = content2:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+officersLabel:SetPoint("TOP", page2Div3, "BOTTOM", -36, -8)
+officersLabel:SetJustifyH("CENTER")
+officersLabel:SetText("Officers Online")
+gf.officersLabel = officersLabel
+
+local officersValue = content2:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+officersValue:SetPoint("TOP", officersLabel, "BOTTOM", 0, -4)
+officersValue:SetWidth(210)
+officersValue:SetJustifyH("CENTER")
+officersValue:SetText("—")
+gf.officersValue = officersValue
+
+-- Pagination buttons at bottom
+local buttonSize = 30
+local prevBtn = CreateFrame("Button", nil, gf, "UIPanelButtonTemplate")
+prevBtn:SetPoint("BOTTOMLEFT", gf, "BOTTOMLEFT", 15, 15)
+prevBtn:SetWidth(buttonSize)
+prevBtn:SetHeight(buttonSize)
+prevBtn:SetText("<")
+prevBtn:SetScript("OnClick", function()
+    if gf.currentPage == 2 then
+        gf.currentPage = 1
+        gf.content:Show()
+        gf.content2:Hide()
+        gf.pageIndicator:SetText("Page 1 / 2")
+    end
+end)
+gf.prevBtn = prevBtn
+
+local nextBtn = CreateFrame("Button", nil, gf, "UIPanelButtonTemplate")
+nextBtn:SetPoint("BOTTOMRIGHT", gf, "BOTTOMRIGHT", -15, 15)
+nextBtn:SetWidth(buttonSize)
+nextBtn:SetHeight(buttonSize)
+nextBtn:SetText(">")
+nextBtn:SetScript("OnClick", function()
+    if gf.currentPage == 1 then
+        gf.currentPage = 2
+        gf.content:Hide()
+        gf.content2:Show()
+        gf.pageIndicator:SetText("Page 2 / 2")
+    end
+end)
+gf.nextBtn = nextBtn
+
+-- Page indicator
+local pageIndicator = gf:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+pageIndicator:SetPoint("BOTTOM", gf, "BOTTOM", 0, 15)
+pageIndicator:SetText("Page 1 / 2")
+gf.pageIndicator = pageIndicator
+
+-- Initialize to page 1
+gf.currentPage = 1
 
         IGW.infoFrame = gf
     end
