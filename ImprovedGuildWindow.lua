@@ -2,7 +2,7 @@
 -- Author: Travis
 
 local IGW = {}
-IGW.VERSION = "1.6"
+IGW.VERSION = "1.7"
 local frame
 local rosterData = {}
 local displayedMembers = {}
@@ -13,6 +13,11 @@ local filterRank = -1
 local showOffline = true
 local currentTab = "details"
 
+-- Configuration: Officer rank threshold
+-- rankIndex: 0=Guild Master, 1-9=other ranks
+-- Members with rankIndex <= this value are considered "officers"
+-- Default: 2 (includes Guild Master and top 2 officer ranks)
+local OFFICER_RANK_THRESHOLD = 2
 
 
 
@@ -216,12 +221,106 @@ filterFrame:SetPoint("TOPLEFT", frame, "TOPLEFT", 20, FILTER_ROW_TOP_Y)
 filterFrame:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -20, FILTER_ROW_TOP_Y)
 filterFrame:SetHeight(FILTER_ROW_HEIGHT)
 
--- Second filter row frame (reserved for future options)
+-- Second filter row frame (Advanced Search row)
 local filterFrame2 = CreateFrame("Frame", nil, frame)
 filterFrame2:SetPoint("TOPLEFT", filterFrame, "BOTTOMLEFT", 0, -FILTER_ROW_GAP)
 filterFrame2:SetPoint("TOPRIGHT", filterFrame, "BOTTOMRIGHT", 0, -FILTER_ROW_GAP)
 filterFrame2:SetHeight(FILTER_ROW_HEIGHT)
+-- Frame always visible, search boxes toggle
 frame.filterFrame2 = filterFrame2
+
+-- Advanced Search toggle button (on filterFrame2, left side)
+local advSearchBtn = CreateFrame("Button", nil, filterFrame2, "UIPanelButtonTemplate")
+advSearchBtn:SetPoint("LEFT", filterFrame2, "LEFT", 0, 0)
+advSearchBtn:SetWidth(120)
+advSearchBtn:SetHeight(22)
+advSearchBtn:SetText("Advanced Search")
+advSearchBtn:SetScript("OnClick", function()
+    if frame.advSearchName:IsVisible() then
+        frame.advSearchName:Hide()
+        frame.advSearchNote:Hide()
+        frame.advSearchOfficerNote:Hide()
+        frame.advSearchNameLabel:Hide()
+        frame.advSearchNoteLabel:Hide()
+        frame.advSearchOfficerNoteLabel:Hide()
+    else
+        frame.advSearchName:Show()
+        frame.advSearchNote:Show()
+        frame.advSearchOfficerNote:Show()
+        frame.advSearchNameLabel:Show()
+        frame.advSearchNoteLabel:Show()
+        frame.advSearchOfficerNoteLabel:Show()
+    end
+end)
+frame.advSearchBtn = advSearchBtn
+
+-- Advanced Search filters (name, note, officer note)
+local filterWidth = 100
+local filterGap = 15
+
+-- Helper function to create search box
+local function CreateAdvancedSearchBox(parent, label, xOffset, filterKey)
+    local labelText = parent:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    labelText:SetPoint("LEFT", parent, "LEFT", xOffset, 0)
+    labelText:SetText(label .. ":")
+    labelText:Hide() -- Hidden by default
+    
+    local editBox = CreateFrame("EditBox", nil, parent)
+    editBox:SetPoint("LEFT", labelText, "RIGHT", 5, 0)
+    editBox:SetWidth(filterWidth)
+    editBox:SetHeight(20)
+    editBox:SetFontObject(GameFontNormal)
+    editBox:SetAutoFocus(false)
+    editBox:SetBackdrop({
+        bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        tile = true,
+        tileSize = 16,
+        edgeSize = 16,
+        insets = { left = 4, right = 4, top = 4, bottom = 4 }
+    })
+    editBox:SetBackdropColor(0, 0, 0, 0.8)
+    editBox:SetScript("OnTextChanged", function()
+        local text = this:GetText()
+        if type(text) == "string" then
+            frame.advancedFilters[filterKey] = string.lower(text)
+        else
+            frame.advancedFilters[filterKey] = ""
+        end
+        IGW:UpdateRosterDisplay()
+    end)
+    editBox:SetScript("OnEscapePressed", function()
+        this:ClearFocus()
+    end)
+    editBox:Hide() -- Hidden by default
+    
+    return editBox, labelText
+end
+
+-- Initialize advanced filters table
+frame.advancedFilters = {
+    name = "",
+    note = "",
+    officernote = ""
+}
+
+-- Create search boxes
+local xPos = 130 -- Start after button
+local nameBox, nameLabel = CreateAdvancedSearchBox(filterFrame2, "Name", xPos, "name")
+frame.advSearchName = nameBox
+frame.advSearchNameLabel = nameLabel
+
+xPos = xPos + 40 + filterWidth + filterGap
+
+local noteBox, noteLabel = CreateAdvancedSearchBox(filterFrame2, "Note", xPos, "note")
+frame.advSearchNote = noteBox
+frame.advSearchNoteLabel = noteLabel
+
+xPos = xPos + 35 + filterWidth + filterGap
+
+local officerNoteBox, officerNoteLabel = CreateAdvancedSearchBox(filterFrame2, "Officer Note", xPos, "officernote")
+frame.advSearchOfficerNote = officerNoteBox
+frame.advSearchOfficerNoteLabel = officerNoteLabel
 
     
     -- Search label
@@ -308,6 +407,35 @@ frame.filterFrame2 = filterFrame2
     refreshBtn:SetHeight(22)
     refreshBtn:SetText("Refresh")
     refreshBtn:SetScript("OnClick", function()
+        -- Clear legacy search box
+        if frame.searchBox then
+            frame.searchBox:SetText("")
+        end
+        filterText = ""
+        
+        -- Clear advanced search boxes
+        if frame.advSearchName then
+            frame.advSearchName:SetText("")
+        end
+        if frame.advSearchNote then
+            frame.advSearchNote:SetText("")
+        end
+        if frame.advSearchOfficerNote then
+            frame.advSearchOfficerNote:SetText("")
+        end
+        if frame.advancedFilters then
+            frame.advancedFilters.name = ""
+            frame.advancedFilters.note = ""
+            frame.advancedFilters.officernote = ""
+        end
+        
+        -- Reset rank filter to "All Ranks"
+        filterRank = -1
+        if rankDropdown then
+            UIDropDownMenu_SetText("All Ranks", rankDropdown)
+        end
+        
+        -- Refresh guild roster
         GuildRoster()
         IGW:UpdateRosterDisplay()
     end)
@@ -811,8 +939,8 @@ function IGW:ShowMemberDetails(index)
         IGW_AddToSpecialFrames("IGW_DetailsFrame", true)
         df:SetWidth(250)
         df:SetHeight(frame:GetHeight())
-        df:SetFrameStrata("HIGH")
-        df:SetFrameLevel(1)
+        df:SetFrameStrata("MEDIUM")
+        df:SetFrameLevel(10)
         df:SetMovable(true)
         df:EnableMouse(true)
         df:SetClampedToScreen(true)
@@ -1076,7 +1204,7 @@ yOffset = yOffset - (buttonHeight + buttonYGap)
         -- Alts section
         local altsLabel = df:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         altsLabel:SetPoint("TOPLEFT", df, "TOPLEFT", leftX, yOffset)
-        altsLabel:SetText("Alts:")
+        altsLabel:SetText("Other Characters:")
         df.altsLabel = altsLabel
         
         yOffset = yOffset - 18
@@ -1130,29 +1258,65 @@ yOffset = yOffset - (buttonHeight + buttonYGap)
         df.officerNoteValue:Hide()
     end
     
-    -- Find alts: search for members with "alt" and this player's name in their public note
+    -- Find alts: bidirectional detection
+    -- 1. Find characters with "alt of [current player]"
+    -- 2. If current player is an alt, find the main and all other alts
     local alts = {}
     local searchName = string.lower(member.name or "")
+    local mainCharacter = nil
     
-    for _, guildMember in ipairs(rosterData) do
-        if guildMember.name ~= member.name and guildMember.note then
-            local note = string.lower(guildMember.note)
-            -- Check if note contains "alt" and the exact player's name as a whole word
-            -- Use word boundaries: spaces, punctuation, start/end of string
-            local pattern = "[%s%p]?" .. searchName .. "[%s%p]?"
-            local hasAlt = string.find(note, "alt")
-            local hasExactName = false
-            
-            -- Check for exact match with word boundaries
-            if string.find(note, "^" .. searchName .. "[%s%p]") or  -- Start of string
-               string.find(note, "[%s%p]" .. searchName .. "$") or  -- End of string
-               string.find(note, "[%s%p]" .. searchName .. "[%s%p]") or  -- Middle
-               note == searchName then  -- Exact match only
-                hasExactName = true
+    -- Helper function to check for exact name match with word boundaries
+    local function hasExactNameMatch(note, name)
+        if string.find(note, "^" .. name .. "[%s%p]") or  -- Start of string
+           string.find(note, "[%s%p]" .. name .. "$") or  -- End of string
+           string.find(note, "[%s%p]" .. name .. "[%s%p]") or  -- Middle
+           note == name then  -- Exact match only
+            return true
+        end
+        return false
+    end
+    
+    -- Check if current character is an alt (has "alt of X" in their note)
+    if member.note then
+        local currentNote = string.lower(member.note)
+        if string.find(currentNote, "alt") then
+            -- Extract main character name from note
+            for _, guildMember in ipairs(rosterData) do
+                if guildMember.name ~= member.name then
+                    local testName = string.lower(guildMember.name)
+                    if hasExactNameMatch(currentNote, testName) then
+                        mainCharacter = guildMember.name
+                        break
+                    end
+                end
             end
-            
-            if hasAlt and hasExactName then
-                table.insert(alts, guildMember.name)
+        end
+    end
+    
+    -- If we found a main character, search for all alts of that main
+    if mainCharacter then
+        local mainNameLower = string.lower(mainCharacter)
+        
+        -- Add the main character to the list
+        table.insert(alts, mainCharacter)
+        
+        -- Find all other alts of this main
+        for _, guildMember in ipairs(rosterData) do
+            if guildMember.name ~= member.name and guildMember.note then
+                local note = string.lower(guildMember.note)
+                if string.find(note, "alt") and hasExactNameMatch(note, mainNameLower) then
+                    table.insert(alts, guildMember.name)
+                end
+            end
+        end
+    else
+        -- Current character is the main, find their alts
+        for _, guildMember in ipairs(rosterData) do
+            if guildMember.name ~= member.name and guildMember.note then
+                local note = string.lower(guildMember.note)
+                if string.find(note, "alt") and hasExactNameMatch(note, searchName) then
+                    table.insert(alts, guildMember.name)
+                end
             end
         end
     end
@@ -1308,7 +1472,7 @@ function IGW:UpdateRosterDisplay()
     for i, member in ipairs(rosterData) do
         local show = true
         
-        -- Text filter
+        -- Text filter (legacy search box)
         if filterText ~= "" then
             local searchIn = string.lower(member.name or "") .. 
                            string.lower(member.class or "") .. 
@@ -1317,6 +1481,30 @@ function IGW:UpdateRosterDisplay()
                            string.lower(member.officernote or "")
             if not string.find(searchIn, filterText, 1, true) then
                 show = false
+            end
+        end
+        
+        -- Advanced filters (individual column searches)
+        if show and frame.advancedFilters then
+            if frame.advancedFilters.name ~= "" then
+                local nameSearch = string.lower(member.name or "")
+                if not string.find(nameSearch, frame.advancedFilters.name, 1, true) then
+                    show = false
+                end
+            end
+            
+            if show and frame.advancedFilters.note ~= "" then
+                local noteSearch = string.lower(member.note or "")
+                if not string.find(noteSearch, frame.advancedFilters.note, 1, true) then
+                    show = false
+                end
+            end
+            
+            if show and frame.advancedFilters.officernote ~= "" then
+                local officerNoteSearch = string.lower(member.officernote or "")
+                if not string.find(officerNoteSearch, frame.advancedFilters.officernote, 1, true) then
+                    show = false
+                end
             end
         end
         
@@ -1763,13 +1951,12 @@ function IGW:UpdateGuildInfoWindow()
         gf.zonesValue:SetText(zoneText)
     end
     
-    -- Officers Online (Guild Master, Officer, Officer-Alt ranks)
+    -- Officers Online (uses OFFICER_RANK_THRESHOLD configuration)
     local onlineOfficers = {}
     for _, m in ipairs(rosterData or {}) do
-        if m and m.online and m.rank then
-            local rankLower = string.lower(m.rank)
-            if string.find(rankLower, "guild master") or 
-               string.find(rankLower, "officer") then
+        if m and m.online and m.rankIndex ~= nil then
+            -- rankIndex: 0=Guild Master, 1-9=other ranks
+            if m.rankIndex <= OFFICER_RANK_THRESHOLD then
                 table.insert(onlineOfficers, m.name)
             end
         end
@@ -1800,8 +1987,8 @@ function IGW:ToggleGuildInfoWindow()
         IGW_AddToSpecialFrames("IGW_GuildInfoFrame", true)
         gf:SetWidth(250)
         gf:SetHeight(frame:GetHeight())
-        gf:SetFrameStrata("HIGH")
-            gf:SetFrameLevel(frame:GetFrameLevel() + 10)
+        gf:SetFrameStrata("MEDIUM")
+            gf:SetFrameLevel(10)
         gf:SetMovable(true)
         gf:EnableMouse(true)
         gf:SetClampedToScreen(true)

@@ -43,11 +43,18 @@ An enhanced guild management window for World of Warcraft 1.12.1 (Turtle WoW).
 
 ### Filtering & Sorting
 - **Search Box**: Filter by name, class, rank, note, or officer note
+- **Advanced Search**: Toggleable individual column filters
+  - Name search box
+  - Note (public) search box
+  - Officer Note search box
+  - All filters work together (AND logic)
+  - Toggle visibility with "Advanced Search" button
 - **Rank Filter**: Dropdown to filter by specific guild rank
 - **Sortable Columns**: Click any column header to sort
   - Name, Level, Class, Rank, Note, Officer Note, Last Online
   - Sort direction indicator (▲/▼)
 - **Show Offline Toggle**: Filter online/offline members
+- **Enhanced Refresh**: Clears all search boxes and resets filters
 - **Per-tab Defaults**: Each tab resets to optimal default view when switched
 
 ### Note Editing
@@ -114,9 +121,25 @@ An enhanced guild management window for World of Warcraft 1.12.1 (Turtle WoW).
 
 ## Version
 
-**1.6** - Stable release with enhanced Guild Info pages
+**1.7** - Stable release with Advanced Search and improvements
 
 ## Changelog
+
+### 1.7
+- **Advanced Search**: Toggleable row with individual column filters
+  - Name, Note (public), and Officer Note search boxes
+  - All filters work together with AND logic
+  - Toggle visibility with "Advanced Search" button
+- **Enhanced Refresh Button**: Now clears all search boxes and resets filters
+- **Bidirectional Alt Detection**: Shows all related characters
+  - Viewing main shows alts
+  - Viewing alt shows main and other alts
+  - Creates complete character network
+- **Rank-Based Officer Detection**: Uses rank index instead of rank names
+  - Configurable `OFFICER_RANK_THRESHOLD` constant (default: 2)
+  - Works with any guild structure/language
+- **Improved Labels**: "Alts" renamed to "Other Characters"
+- **Normalized Z-Depth**: All windows use MEDIUM strata for proper layering
 
 ### 1.6
 - **Guild Info Pagination**: Two-page system with navigation arrows
