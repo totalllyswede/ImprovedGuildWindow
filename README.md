@@ -112,4 +112,4 @@ Searches public notes for "alt" + character name. Works bidirectionally:
 
 ## Author
 
-Olzon - Turtle WoW
+Olzon
