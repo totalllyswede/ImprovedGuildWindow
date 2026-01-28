@@ -7,14 +7,13 @@ Enhanced guild management for World of Warcraft 1.12.1 (Turtle WoW).
 1. Extract `ImprovedGuildWindow` folder to `World of Warcraft\Interface\AddOns\`
 2. Restart WoW or `/reload`
 3. Set keybind: ESC > Key Bindings > Improved Guild Window (Shift+O recommended)
+   
+<img width="1731" height="746" alt="ImprovedGuildWindow A" src="https://github.com/user-attachments/assets/843d0ce6-f472-4da0-8840-f84a94233a25" />
 
 ## Quick Start
 
 **Open:** Shift+O (or `/igw`)  Check Keybinds Settings if it's not opening
 **Close:** ESC or click X
-
-<img width="1731" height="746" alt="ImprovedGuildWindow A" src="https://github.com/user-attachments/assets/843d0ce6-f472-4da0-8840-f84a94233a25" />
-
 
 ## Main Features
 
