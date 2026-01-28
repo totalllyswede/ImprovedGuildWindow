@@ -10,8 +10,11 @@ Enhanced guild management for World of Warcraft 1.12.1 (Turtle WoW).
 
 ## Quick Start
 
-**Open:** Shift+O (or `/igw`)  
+**Open:** Shift+O (or `/igw`)  Check Keybinds Settings if it's not opening
 **Close:** ESC or click X
+
+<img width="1731" height="746" alt="ImprovedGuildWindow A" src="https://github.com/user-attachments/assets/843d0ce6-f472-4da0-8840-f84a94233a25" />
+
 
 ## Main Features
 
