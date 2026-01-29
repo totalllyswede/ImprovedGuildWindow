@@ -2,7 +2,7 @@
 -- Author: Travis
 
 local IGW = {}
-IGW.VERSION = "1.10"
+IGW.VERSION = "2.0"
 local frame
 local rosterData = {}
 local displayedMembers = {}
@@ -89,6 +89,17 @@ local CLASS_COLORS = {
 
 -- Initialize saved variables
 function IGW:OnLoad()
+    -- Note: At this point, SavedVariables are NOT yet loaded
+    -- We'll initialize them in OnPlayerLogin when they're available
+    self:RegisterEvents()
+    
+    DEFAULT_CHAT_FRAME:AddMessage("|cFF00FF00Improved Guild Window loaded!|r")
+    DEFAULT_CHAT_FRAME:AddMessage("|cFF00FF00Set keybind in ESC > Key Bindings > Improved Guild Window|r")
+    DEFAULT_CHAT_FRAME:AddMessage("|cFF00FF00Or use /igw to open|r")
+end
+
+-- Initialize SavedVariables and create frame (called after PLAYER_LOGIN when SavedVariables are loaded)
+function IGW:InitializeSavedVariables()
     if not ImprovedGuildWindowDB then
         ImprovedGuildWindowDB = {
             position = {},
@@ -97,12 +108,18 @@ function IGW:OnLoad()
             sortColumn = "name",
             sortAscending = true,
             showOffline = true,
-            opacity = 1.0
+            opacity = 1.0,
+            bgColor = {r = 0.15, g = 0.15, b = 0.15}  -- Default dark grey
         }
     end
     
-        -- Background opacity (fixed)
-    ImprovedGuildWindowDB.opacity = IGW_BG_OPACITY
+    -- Ensure bgColor exists (for existing saved variables)
+    if not ImprovedGuildWindowDB.bgColor then
+        ImprovedGuildWindowDB.bgColor = {r = 0.15, g = 0.15, b = 0.15}
+    end
+    
+    -- Load saved opacity or use default
+    IGW_BG_OPACITY = ImprovedGuildWindowDB.opacity or 0.95
 
     sortColumn = ImprovedGuildWindowDB.sortColumn or "name"
     sortAscending = ImprovedGuildWindowDB.sortAscending
@@ -110,21 +127,28 @@ function IGW:OnLoad()
     showOffline = ImprovedGuildWindowDB.showOffline
     if showOffline == nil then showOffline = true end
     
+    -- NOW create the main frame with SavedVariables loaded
     self:CreateMainFrame()
-    self:RegisterEvents()
-    
-    DEFAULT_CHAT_FRAME:AddMessage("|cFF00FF00Improved Guild Window loaded!|r")
-    DEFAULT_CHAT_FRAME:AddMessage("|cFF00FF00Set keybind in ESC > Key Bindings > Improved Guild Window|r")
-    DEFAULT_CHAT_FRAME:AddMessage("|cFF00FF00Or use /igw to open|r")
 end
 
 -- Create the main window frame
 function IGW:CreateMainFrame()
+    -- Ensure DB exists (should have been initialized by now)
+    if not ImprovedGuildWindowDB then
+        DEFAULT_CHAT_FRAME:AddMessage("|cFFFF0000ERROR: ImprovedGuildWindowDB not initialized!|r")
+        return
+    end
+    
+    -- Don't create if already exists
+    if frame then
+        return
+    end
+    
     -- Main frame
     frame = CreateFrame("Frame", "ImprovedGuildWindowFrame", UIParent)
     IGW_AddToSpecialFrames("ImprovedGuildWindowFrame", false)
-    frame:SetWidth(ImprovedGuildWindowDB.width)
-    frame:SetHeight(ImprovedGuildWindowDB.height)
+    frame:SetWidth(ImprovedGuildWindowDB.width or 650)
+    frame:SetHeight(ImprovedGuildWindowDB.height or 500)
     frame:SetFrameStrata("MEDIUM")
     frame:SetFrameLevel(1)
     frame:SetMovable(true)
@@ -132,16 +156,25 @@ function IGW:CreateMainFrame()
     frame:SetClampedToScreen(true)
     frame:Hide()
     
-    -- Background
+    -- Background (border only, solid texture added separately)
     frame:SetBackdrop({
-        bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
         edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
-        tile = true,
-        tileSize = 16,
         edgeSize = 32,
         insets = { left = 11, right = 12, top = 12, bottom = 11 }
     })
-    frame:SetBackdropColor(0, 0, 0, IGW_BG_OPACITY)
+    frame:SetBackdropBorderColor(1, 1, 1, 1)
+    
+    -- Create solid background texture (inside the border)
+    local bgTexture = frame:CreateTexture(nil, "BACKGROUND")
+    bgTexture:SetPoint("TOPLEFT", frame, "TOPLEFT", 11, -12)
+    bgTexture:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -12, 11)
+    -- Use saved color or default to dark grey
+    local bgColor = {r = 0.15, g = 0.15, b = 0.15}
+    if ImprovedGuildWindowDB and ImprovedGuildWindowDB.bgColor then
+        bgColor = ImprovedGuildWindowDB.bgColor
+    end
+    bgTexture:SetTexture(bgColor.r, bgColor.g, bgColor.b, IGW_BG_OPACITY)
+    frame.bgTexture = bgTexture
     
     -- Title bar for dragging
     local titleBar = CreateFrame("Frame", nil, frame)
@@ -165,9 +198,9 @@ function IGW:CreateMainFrame()
     title:SetText(GetGuildInfo("player") or "Guild Window")
     frame.titleText = title
     
-    -- Close button
+    -- Close button (with 5px padding)
     local closeBtn = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
-    closeBtn:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -5, -5)
+    closeBtn:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -10, -10)
     closeBtn:SetFrameLevel(frame:GetFrameLevel() + 2)
     closeBtn:SetScript("OnClick", function()
         frame:Hide()
@@ -966,16 +999,25 @@ function IGW:ShowMemberDetails(index)
         df:SetClampedToScreen(true)
         df:Hide()
         
-        -- Background
+        -- Background (border only, solid texture added separately)
         df:SetBackdrop({
-            bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
             edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
-            tile = true,
-            tileSize = 16,
             edgeSize = 32,
             insets = { left = 11, right = 12, top = 12, bottom = 11 }
         })
-        df:SetBackdropColor(0, 0, 0, IGW_BG_OPACITY)
+        df:SetBackdropBorderColor(1, 1, 1, 1)
+        
+        -- Create solid background texture (inside the border)
+        local dfBgTexture = df:CreateTexture(nil, "BACKGROUND")
+        dfBgTexture:SetPoint("TOPLEFT", df, "TOPLEFT", 11, -12)
+        dfBgTexture:SetPoint("BOTTOMRIGHT", df, "BOTTOMRIGHT", -12, 11)
+        -- Use saved color or default to dark grey
+        local bgColor = {r = 0.15, g = 0.15, b = 0.15}
+        if ImprovedGuildWindowDB and ImprovedGuildWindowDB.bgColor then
+            bgColor = ImprovedGuildWindowDB.bgColor
+        end
+        dfBgTexture:SetTexture(bgColor.r, bgColor.g, bgColor.b, IGW_BG_OPACITY)
+        df.bgTexture = dfBgTexture
         
         -- Title bar
         local titleBar = CreateFrame("Frame", nil, df)
@@ -1004,7 +1046,7 @@ function IGW:ShowMemberDetails(index)
         
         -- Close button
         local closeBtn = CreateFrame("Button", nil, df, "UIPanelCloseButton")
-        closeBtn:SetPoint("TOPRIGHT", df, "TOPRIGHT", -5, -5)
+        closeBtn:SetPoint("TOPRIGHT", df, "TOPRIGHT", -10, -10)
         closeBtn:SetFrameLevel(df:GetFrameLevel() + 2)
         closeBtn:SetScript("OnClick", function()
             df:Hide()
@@ -1409,6 +1451,9 @@ end
 
 -- Handle player login
 function IGW:OnPlayerLogin()
+    -- Initialize SavedVariables and create main frame now that SavedVariables are loaded
+    self:InitializeSavedVariables()
+    
     if IsInGuild() then
         GuildRoster()
     end
@@ -2031,17 +2076,26 @@ function IGW:ToggleGuildInfoWindow()
         gf:SetClampedToScreen(true)
         gf:Hide()
 
+        -- Background (border only, solid texture added separately)
         gf:SetBackdrop({
-                bgFile = "Interface\Tooltips\UI-Tooltip-Background",
-                edgeFile = "Interface\DialogFrame\UI-DialogBox-Border",
-                tile = true,
-                tileSize = 16,
+                edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
                 edgeSize = 32,
                 insets = { left = 11, right = 12, top = 12, bottom = 11 }
             })
-            gf:SetBackdropColor(0, 0, 0, 0.95)
         gf:SetBackdropBorderColor(1, 1, 1, 1)
-        gf:SetAlpha(1)
+        
+        -- Create solid background texture (inside the border)
+        local gfBgTexture = gf:CreateTexture(nil, "BACKGROUND")
+        gfBgTexture:SetPoint("TOPLEFT", gf, "TOPLEFT", 11, -12)
+        gfBgTexture:SetPoint("BOTTOMRIGHT", gf, "BOTTOMRIGHT", -12, 11)
+        -- Use saved color or default to dark grey
+        local bgColor = {r = 0.15, g = 0.15, b = 0.15}
+        if ImprovedGuildWindowDB and ImprovedGuildWindowDB.bgColor then
+            bgColor = ImprovedGuildWindowDB.bgColor
+        end
+        gfBgTexture:SetTexture(bgColor.r, bgColor.g, bgColor.b, IGW_BG_OPACITY)
+        gf.bgTexture = gfBgTexture
+        
 -- Title bar
         local titleBar = CreateFrame("Frame", nil, gf)
         titleBar:SetPoint("TOPLEFT", gf, "TOPLEFT", 12, -12)
@@ -2067,7 +2121,7 @@ function IGW:ToggleGuildInfoWindow()
         gf.title = title
 
         local closeBtn = CreateFrame("Button", nil, gf, "UIPanelCloseButton")
-        closeBtn:SetPoint("TOPRIGHT", gf, "TOPRIGHT", -5, -5)
+        closeBtn:SetPoint("TOPRIGHT", gf, "TOPRIGHT", -10, -10)
         closeBtn:SetFrameLevel(gf:GetFrameLevel() + 2)
         closeBtn:SetScript("OnClick", function() gf:Hide() end)
 
@@ -2278,18 +2332,15 @@ gf.currentPage = 1
         -- Highlight tab3 button
         frame.tab3:SetBackdropColor(0.5, 0.5, 0.5, 1)
         frame.tab3Text:SetTextColor(1, 1, 1)
-gf:SetBackdrop({
-    bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
-    edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
-    tile = true,
-    tileSize = 16,
-    edgeSize = 32,
-    insets = { left = 11, right = 12, top = 12, bottom = 11 }
-})
-gf:SetBackdropColor(0, 0, 0, 0.95)
-gf:SetBackdropBorderColor(1, 1, 1, 1)
-gf:SetAlpha(1)
-IGW:UpdateGuildInfoWindow()
+        -- Update texture with saved color and opacity
+        if gf.bgTexture then
+            local bgColor = {r = 0.15, g = 0.15, b = 0.15}
+            if ImprovedGuildWindowDB and ImprovedGuildWindowDB.bgColor then
+                bgColor = ImprovedGuildWindowDB.bgColor
+            end
+            gf.bgTexture:SetTexture(bgColor.r, bgColor.g, bgColor.b, IGW_BG_OPACITY)
+        end
+        IGW:UpdateGuildInfoWindow()
             gf:Show()
     end
 end
@@ -2325,7 +2376,13 @@ function IGW:ToggleOptionsWindow()
         local bgTexture = of:CreateTexture(nil, "BACKGROUND")
         bgTexture:SetPoint("TOPLEFT", of, "TOPLEFT", 11, -12)
         bgTexture:SetPoint("BOTTOMRIGHT", of, "BOTTOMRIGHT", -12, 11)
-        bgTexture:SetTexture(0.15, 0.15, 0.15, 1)  -- Dark grey, 100% opaque
+        -- Use saved color or default to dark grey, always 90% opaque for options
+        local bgColor = {r = 0.15, g = 0.15, b = 0.15}
+        if ImprovedGuildWindowDB and ImprovedGuildWindowDB.bgColor then
+            bgColor = ImprovedGuildWindowDB.bgColor
+        end
+        bgTexture:SetTexture(bgColor.r, bgColor.g, bgColor.b, 0.9)
+        of.bgTexture = bgTexture
         
         -- Title bar
         local titleBar = CreateFrame("Frame", nil, of)
@@ -2340,10 +2397,10 @@ function IGW:ToggleOptionsWindow()
         
         local title = titleBar:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
         title:SetPoint("CENTER", titleBar, "CENTER", 0, 0)
-        title:SetText("ImprovedGuildWindow Options")
+        title:SetText("Improved Guild Window - Options")
         
         local closeBtn = CreateFrame("Button", nil, of, "UIPanelCloseButton")
-        closeBtn:SetPoint("TOPRIGHT", of, "TOPRIGHT", -5, -5)
+        closeBtn:SetPoint("TOPRIGHT", of, "TOPRIGHT", -10, -10)
         closeBtn:SetFrameLevel(of:GetFrameLevel() + 2)
         closeBtn:SetScript("OnClick", function() of:Hide() end)
         
@@ -2384,13 +2441,111 @@ function IGW:ToggleOptionsWindow()
         end)
         of.opacitySlider = opacitySlider
         
-        yOffset = yOffset - 60
+        -- Color options label (to the right of slider, moved up)
+        local colorLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        colorLabel:SetPoint("LEFT", opacitySlider, "RIGHT", 40, 30)
+        colorLabel:SetText("Background Color:")
+        
+        -- Define 8 color options
+        local colorOptions = {
+            {r = 0.15, g = 0.15, b = 0.15, name = "Dark Grey"},     -- Default
+            {r = 0.05, g = 0.05, b = 0.05, name = "Black"},
+            {r = 0.1, g = 0.1, b = 0.2, name = "Dark Blue"},
+            {r = 0.2, g = 0.15, b = 0.1, name = "Dark Brown"},
+            {r = 0.15, g = 0.2, b = 0.15, name = "Dark Green"},
+            {r = 0.2, g = 0.1, b = 0.15, name = "Dark Purple"},
+            {r = 0.2, g = 0.15, b = 0.15, name = "Dark Red"},
+            {r = 0.1, g = 0.15, b = 0.15, name = "Dark Cyan"}
+        }
+        
+        -- Current selected color (default to first option)
+        of.selectedColor = 1
+        
+        -- Create clickable color boxes
+        local colorBoxes = {}
+        for i, color in ipairs(colorOptions) do
+            local box = CreateFrame("Button", nil, content)
+            box:SetPoint("LEFT", colorLabel, "BOTTOMLEFT", (i-1) * 32, -30)
+            box:SetWidth(30)
+            box:SetHeight(30)
+            
+            -- Store color info on box
+            box.colorName = color.name
+            box.colorIndex = i
+            
+            -- Border first
+            box:SetBackdrop({
+                edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+                edgeSize = 12,
+                insets = { left = 2, right = 2, top = 2, bottom = 2 }
+            })
+            box:SetBackdropBorderColor(0.5, 0.5, 0.5, 1)
+            
+            -- Background color (inset to stay within border)
+            local bgTex = box:CreateTexture(nil, "BACKGROUND")
+            bgTex:SetPoint("TOPLEFT", box, "TOPLEFT", 4, -4)
+            bgTex:SetPoint("BOTTOMRIGHT", box, "BOTTOMRIGHT", -4, 4)
+            bgTex:SetTexture(color.r, color.g, color.b, 1)
+            box.bgTex = bgTex
+            
+            -- Selection indicator (white border when selected)
+            box.selected = false
+            
+            box:SetScript("OnClick", function()
+                -- Deselect all
+                for j, b in ipairs(colorBoxes) do
+                    b:SetBackdropBorderColor(0.5, 0.5, 0.5, 1)
+                    b.selected = false
+                end
+                -- Select this one
+                this:SetBackdropBorderColor(1, 1, 1, 1)
+                this.selected = true
+                of.selectedColor = this.colorIndex
+            end)
+            
+            box:SetScript("OnEnter", function()
+                GameTooltip:SetOwner(this, "ANCHOR_TOP")
+                GameTooltip:SetText(this.colorName)
+                GameTooltip:Show()
+            end)
+            
+            box:SetScript("OnLeave", function()
+                GameTooltip:Hide()
+            end)
+            
+            colorBoxes[i] = box
+        end
+        
+        -- Preselect the saved color or default to first
+        local savedColor = {r = 0.15, g = 0.15, b = 0.15}
+        if ImprovedGuildWindowDB and ImprovedGuildWindowDB.bgColor then
+            savedColor = ImprovedGuildWindowDB.bgColor
+        end
+        local selectedIndex = 1
+        for i, color in ipairs(colorOptions) do
+            -- Compare with small tolerance for floating point
+            local rMatch = math.abs(color.r - savedColor.r) < 0.01
+            local gMatch = math.abs(color.g - savedColor.g) < 0.01
+            local bMatch = math.abs(color.b - savedColor.b) < 0.01
+            if rMatch and gMatch and bMatch then
+                selectedIndex = i
+                break
+            end
+        end
+        colorBoxes[selectedIndex]:SetBackdropBorderColor(1, 1, 1, 1)
+        colorBoxes[selectedIndex].selected = true
+        of.selectedColor = selectedIndex
+        
+        of.colorOptions = colorOptions
+        of.colorBoxes = colorBoxes
+        
+        yOffset = yOffset - 65
         
         -- Divider
         local divider1 = content:CreateTexture(nil, "ARTWORK")
         divider1:SetTexture("Interface\\DialogFrame\\UI-DialogBox-Divider")
-        divider1:SetPoint("TOP", content, "TOP", 0, yOffset)
-        divider1:SetWidth(600)
+        divider1:SetPoint("TOP", content, "TOP", 103, yOffset)
+        divider1:SetWidth(830)
         divider1:SetHeight(16)
         yOffset = yOffset - 30
         
@@ -2431,8 +2586,8 @@ function IGW:ToggleOptionsWindow()
         -- Divider
         local divider2 = content:CreateTexture(nil, "ARTWORK")
         divider2:SetTexture("Interface\\DialogFrame\\UI-DialogBox-Divider")
-        divider2:SetPoint("TOP", content, "TOP", 0, yOffset)
-        divider2:SetWidth(600)
+        divider2:SetPoint("TOP", content, "TOP", 103, yOffset)
+        divider2:SetWidth(830)
         divider2:SetHeight(16)
         yOffset = yOffset - 30
         
@@ -2511,6 +2666,14 @@ function IGW:ToggleOptionsWindow()
     if of:IsVisible() then
         of:Hide()
     else
+        -- Update background color before showing
+        if of.bgTexture then
+            local bgColor = {r = 0.15, g = 0.15, b = 0.15}
+            if ImprovedGuildWindowDB and ImprovedGuildWindowDB.bgColor then
+                bgColor = ImprovedGuildWindowDB.bgColor
+            end
+            of.bgTexture:SetTexture(bgColor.r, bgColor.g, bgColor.b, 0.9)
+        end
         -- Anchor top of options window to top of main window
         of:ClearAllPoints()
         of:SetPoint("TOP", frame, "TOP", 0, 0)
@@ -2534,15 +2697,25 @@ function IGW:SaveOptions()
     IGW_BG_OPACITY = opacityValue
     ImprovedGuildWindowDB.opacity = opacityValue
     
-    -- Apply opacity to all windows immediately
-    if frame then
-        frame:SetBackdropColor(0, 0, 0, opacityValue)
-    end
-    if IGW.detailsFrame then
-        IGW.detailsFrame:SetBackdropColor(0, 0, 0, opacityValue)
-    end
-    if IGW.infoFrame then
-        IGW.infoFrame:SetBackdropColor(0, 0, 0, opacityValue)
+    -- Apply opacity and color to all windows immediately
+    local selectedColor = of.colorOptions and of.colorOptions[of.selectedColor or 1]
+    if selectedColor then
+        if frame and frame.bgTexture then
+            frame.bgTexture:SetTexture(selectedColor.r, selectedColor.g, selectedColor.b, opacityValue)
+        end
+        if IGW.detailsFrame and IGW.detailsFrame.bgTexture then
+            IGW.detailsFrame.bgTexture:SetTexture(selectedColor.r, selectedColor.g, selectedColor.b, opacityValue)
+        end
+        if IGW.infoFrame and IGW.infoFrame.bgTexture then
+            IGW.infoFrame.bgTexture:SetTexture(selectedColor.r, selectedColor.g, selectedColor.b, opacityValue)
+        end
+        -- Apply to options window (always 90% opaque)
+        if of and of.bgTexture then
+            of.bgTexture:SetTexture(selectedColor.r, selectedColor.g, selectedColor.b, 0.9)
+        end
+        
+        -- Save background color
+        ImprovedGuildWindowDB.bgColor = {r = selectedColor.r, g = selectedColor.g, b = selectedColor.b}
     end
     
     -- Save remember windows setting

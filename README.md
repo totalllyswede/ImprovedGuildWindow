@@ -7,108 +7,99 @@ Enhanced guild management for World of Warcraft 1.12.1 (Turtle WoW).
 ## Installation
 
 1. Extract `ImprovedGuildWindow` folder to `World of Warcraft\Interface\AddOns\`
-2. Restart WoW or `/reload`
-3. Set keybind: ESC > Key Bindings > Improved Guild Window (Shift+O recommended)
-   
-## Quick Start
+2. Restart WoW or type `/reload`
+3. Open with `/igw` or set keybind: ESC → Key Bindings → Improved Guild Window
 
-**/igw to open window or set a Keybind in WoW settings
-**Close:** ESC or click X
+## Features
 
-## Main Features
-
-### Three Main Tabs
+### Three View Modes
 - **Guild Members** - Online members only, sorted by rank
 - **Member Details** - All members with Last Online column
-- **Guild Info** - Statistics and guild information (opens left panel)
+- **Guild Info** - Statistics and guild information (left panel)
+
+### Options Menu
+Click the "Options" button to customize:
+- **Background Color** - Choose from 8 color themes
+- **Window Opacity** - Adjust transparency (30%-100%)
+- **Remember Windows** - Restore open panels between sessions
+- **Allow Moving Side Windows** - Toggle lock/unlock for side panels
+- **Default View** - Set which tab opens by default
 
 ### Advanced Search
-Click "Advanced Search" to reveal individual search boxes:
-- Name search
-- Public note search  
-- Officer note search
+Click "Advanced Search" for individual filters:
+- Name, Public Note, and Officer Note search boxes
 - All filters work together
+- "Clear / Refresh" button resets and updates roster
 
-**Clear / Refresh** button resets all filters and refreshes roster.
-
-### Member Details Window (Right Panel)
-Click any member to open:
+### Member Details Panel (Right Side)
+Click any member name to view:
 - Full member information
 - Edit public/officer notes (if permitted)
-- Other Characters list (Alts need player notes for this to work ex. Alt of Olzon)
-- Whisper and Invite buttons
+- Other Characters list (requires "Alt of [Name]" in player notes)
+- Quick Whisper and Invite buttons
 
-### Guild Info Window (Left Panel)
-**Page 1 - Overview:**
+### Guild Info Panel (Left Side)
+**Page 1:**
 - Guild name and member count
 - Message of the Day
-- Guild information
+- Guild information text
 
-**Page 2 - Statistics:**
-- Class distribution (color-coded bar graph)
-- Level 60 character count
+**Page 2:**
+- Class distribution bar graph
+- Level 60 count
 - Top 5 zones (online members)
-- Officers online list
-
-Use arrow buttons (< >) to switch pages.
+- Online officers list
 
 ### Sorting & Filtering
-- Click column headers to sort (▲/▼ indicator)
+- Click column headers to sort
 - Rank dropdown filter
 - Show/Hide offline members toggle
-- Per-tab default settings
-
-### Quality of Life
-- All windows draggable
-- Positions saved between sessions
-- Class-colored names
-- Auto-updates on roster changes
-- Companion windows close with main window
+- Settings persist per-tab
 
 ## Commands
 
 - `/igw` - Toggle window
-- `/igw show` - Show window
+- `/igw show` - Show window  
 - `/igw hide` - Hide window
 - `/igw debug` - Show debug info
 
 ## Configuration
 
-### Officer Rank Detection
+### Officer Detection
 Edit `OFFICER_RANK_THRESHOLD` in the .lua file (default: 2)
 - 0 = Guild Master only
 - 1 = Guild Master + first officer rank
-- 2 = Guild Master + top 2 officer ranks (default)
+- 2 = Guild Master + top 2 ranks (default)
 
 ### Alt Detection
-Searches public notes for "alt" + character name. Works bidirectionally:
-- View main → shows all alts
-- View alt → shows main + other alts
+Add "Alt of [MainName]" to character public notes for automatic detection.
+Works bidirectionally - view any character to see their alts and main.
 
 ## Version
 
-**1.10** - Latest stable release
+**2.0** - Latest release
 
-### Recent Updates
+### Changelog
+
+**2.0**
+- Complete visual overhaul with solid backgrounds
+- Customizable colors (8 themes: Grey, Black, Blue, Brown, Green, Purple, Red, Cyan)
+- Adjustable opacity per window (30-100%)
+- Options menu with comprehensive settings
+- Remember open windows between sessions
+- Movable/lockable side panels option
+- Choose default view tab
+- Options window at 90% opacity
+- Fixed color persistence across reloads
 
 **1.10**
-- Options window sized to match main window (650x500)
-- Title updated to "ImprovedGuildWindow Options"
+- Options window matched to main window size
+- Updated options title
 
 **1.9**
-- Options menu with settings
-- Visual Settings: Window opacity slider (30%-100%)
-- Window Behavior: Remember open windows, Allow moving side windows
-- Default View: Choose default tab (Guild Members or Member Details)
-- All settings persist between sessions
-
-**1.8**
-- UI consistency improvements
-- All tabs same size (120px) and properly aligned
-- Guild Info button highlights when active
-- Pagination buttons match tab button height
-- Search boxes have proper text padding and height
+- Initial options menu implementation
+- Basic visual and behavior settings
 
 ## Author
 
-Olzon
+Olzon - Turtle WoW
