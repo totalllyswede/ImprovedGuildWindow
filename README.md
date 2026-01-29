@@ -87,9 +87,20 @@ Searches public notes for "alt" + character name. Works bidirectionally:
 
 ## Version
 
-**1.8** - Latest stable release
+**1.10** - Latest stable release
 
 ### Recent Updates
+
+**1.10**
+- Options window sized to match main window (650x500)
+- Title updated to "ImprovedGuildWindow Options"
+
+**1.9**
+- Options menu with settings
+- Visual Settings: Window opacity slider (30%-100%)
+- Window Behavior: Remember open windows, Allow moving side windows
+- Default View: Choose default tab (Guild Members or Member Details)
+- All settings persist between sessions
 
 **1.8**
 - UI consistency improvements
@@ -97,18 +108,6 @@ Searches public notes for "alt" + character name. Works bidirectionally:
 - Guild Info button highlights when active
 - Pagination buttons match tab button height
 - Search boxes have proper text padding and height
-
-**1.7**
-- Advanced Search with individual column filters
-- Enhanced Clear/Refresh button
-- Bidirectional alt detection
-- Rank-based officer detection (language-independent)
-- Normalized window layering
-
-**1.6**
-- Guild Info pagination system (2 pages)
-- Visual class distribution bar graph
-- Enhanced statistics (Level 60s, Zones, Officers)
 
 ## Author
 

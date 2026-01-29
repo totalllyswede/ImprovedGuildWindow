@@ -2,7 +2,7 @@
 -- Author: Travis
 
 local IGW = {}
-IGW.VERSION = "1.8"
+IGW.VERSION = "1.10"
 local frame
 local rosterData = {}
 local displayedMembers = {}
@@ -181,6 +181,22 @@ function IGW:CreateMainFrame()
             frame.tab3:SetBackdropColor(0.2, 0.2, 0.2, 1)
             frame.tab3Text:SetTextColor(0.7, 0.7, 0.7)
         end
+        -- Close options window
+        if IGW.optionsFrame then
+            IGW.optionsFrame:Hide()
+        end
+    end)
+    
+    -- Options button (standard button, anchored to left of close button)
+    local optionsBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+    optionsBtn:SetPoint("RIGHT", closeBtn, "LEFT", -2, 0)  -- 2px gap from close button
+    optionsBtn:SetWidth(65)
+    optionsBtn:SetHeight(20)
+    optionsBtn:SetText("Options")
+    optionsBtn:SetFrameLevel(frame:GetFrameLevel() + 2)
+    
+    optionsBtn:SetScript("OnClick", function()
+        IGW:ToggleOptionsWindow()
     end)
     -- Filter section
     self:CreateFilterSection()
@@ -944,7 +960,8 @@ function IGW:ShowMemberDetails(index)
         df:SetHeight(frame:GetHeight())
         df:SetFrameStrata("MEDIUM")
         df:SetFrameLevel(10)
-        df:SetMovable(true)
+        -- Only allow moving if setting is enabled
+        df:SetMovable((ImprovedGuildWindowDB and ImprovedGuildWindowDB.allowMoveSideWindows) or false)
         df:EnableMouse(true)
         df:SetClampedToScreen(true)
         df:Hide()
@@ -969,10 +986,14 @@ function IGW:ShowMemberDetails(index)
         titleBar:EnableMouse(true)
         titleBar:RegisterForDrag("LeftButton")
         titleBar:SetScript("OnDragStart", function()
-            df:StartMoving()
+            if df:IsMovable() then
+                df:StartMoving()
+            end
         end)
         titleBar:SetScript("OnDragStop", function()
-            df:StopMovingOrSizing()
+            if df:IsMovable() then
+                df:StopMovingOrSizing()
+            end
         end)
         
         -- Title text
@@ -1767,6 +1788,13 @@ end
 function IGW:ToggleWindow()
     if frame:IsVisible() then
         frame:Hide()
+        -- Save window states if remember is enabled
+        if ImprovedGuildWindowDB and ImprovedGuildWindowDB.rememberWindows then
+            ImprovedGuildWindowDB.windowStates = {
+                detailsOpen = IGW.detailsFrame and IGW.detailsFrame:IsVisible() or false,
+                infoOpen = IGW.infoFrame and IGW.infoFrame:IsVisible() or false
+            }
+        end
         -- Close details window when main window closes
         if IGW.detailsFrame then
             IGW.detailsFrame:Hide()
@@ -1778,10 +1806,24 @@ function IGW:ToggleWindow()
     else
         if IsInGuild() then
             GuildRoster()
-            -- Switch to Guild Members tab (details) when opening
-            self:SwitchTab("details")
+            -- Use saved default tab or fall back to "details"
+            local defaultTab = "details"
+            if ImprovedGuildWindowDB and ImprovedGuildWindowDB.defaultTab then
+                defaultTab = ImprovedGuildWindowDB.defaultTab
+            end
+            self:SwitchTab(defaultTab)
             frame:Show()
             self:UpdateRosterDisplay()
+            
+            -- Restore remembered windows if enabled
+            if ImprovedGuildWindowDB and ImprovedGuildWindowDB.rememberWindows and ImprovedGuildWindowDB.windowStates then
+                if ImprovedGuildWindowDB.windowStates.detailsOpen and IGW.detailsFrame then
+                    IGW.detailsFrame:Show()
+                end
+                if ImprovedGuildWindowDB.windowStates.infoOpen and IGW.infoFrame then
+                    IGW:ToggleGuildInfoWindow()
+                end
+            end
         else
             DEFAULT_CHAT_FRAME:AddMessage("|cFFFF0000You are not in a guild.|r")
         end
@@ -1983,7 +2025,8 @@ function IGW:ToggleGuildInfoWindow()
         gf:SetHeight(frame:GetHeight())
         gf:SetFrameStrata("MEDIUM")
             gf:SetFrameLevel(10)
-        gf:SetMovable(true)
+        -- Only allow moving if setting is enabled
+        gf:SetMovable((ImprovedGuildWindowDB and ImprovedGuildWindowDB.allowMoveSideWindows) or false)
         gf:EnableMouse(true)
         gf:SetClampedToScreen(true)
         gf:Hide()
@@ -2007,8 +2050,16 @@ function IGW:ToggleGuildInfoWindow()
         titleBar:SetFrameLevel(gf:GetFrameLevel() + 1)
         titleBar:EnableMouse(true)
         titleBar:RegisterForDrag("LeftButton")
-        titleBar:SetScript("OnDragStart", function() gf:StartMoving() end)
-        titleBar:SetScript("OnDragStop", function() gf:StopMovingOrSizing() end)
+        titleBar:SetScript("OnDragStart", function() 
+            if gf:IsMovable() then
+                gf:StartMoving() 
+            end
+        end)
+        titleBar:SetScript("OnDragStop", function() 
+            if gf:IsMovable() then
+                gf:StopMovingOrSizing() 
+            end
+        end)
 
         local title = titleBar:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
         title:SetPoint("CENTER", titleBar, "CENTER", 0, 0)
@@ -2241,6 +2292,289 @@ gf:SetAlpha(1)
 IGW:UpdateGuildInfoWindow()
             gf:Show()
     end
+end
+
+-- Toggle Options window
+function IGW:ToggleOptionsWindow()
+    if not frame then return end
+    
+    -- Create if needed
+    if not IGW.optionsFrame then
+        local of = CreateFrame("Frame", "IGW_OptionsFrame", UIParent)
+        of:SetWidth(650)  -- Same width as main window
+        of:SetHeight(500)  -- Same height as main window
+        of:SetFrameStrata("DIALOG")
+        of:SetFrameLevel(100)
+        of:SetMovable(true)
+        of:EnableMouse(true)
+        of:SetClampedToScreen(true)
+        of:Hide()
+        
+        -- Add to special frames for ESC key support
+        IGW_AddToSpecialFrames("IGW_OptionsFrame", true)
+        
+        -- Border first
+        of:SetBackdrop({
+            edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+            edgeSize = 32,
+            insets = { left = 11, right = 12, top = 12, bottom = 11 }
+        })
+        of:SetBackdropBorderColor(1, 1, 1, 1)
+        
+        -- Create solid background texture (inside the border)
+        local bgTexture = of:CreateTexture(nil, "BACKGROUND")
+        bgTexture:SetPoint("TOPLEFT", of, "TOPLEFT", 11, -12)
+        bgTexture:SetPoint("BOTTOMRIGHT", of, "BOTTOMRIGHT", -12, 11)
+        bgTexture:SetTexture(0.15, 0.15, 0.15, 1)  -- Dark grey, 100% opaque
+        
+        -- Title bar
+        local titleBar = CreateFrame("Frame", nil, of)
+        titleBar:SetPoint("TOPLEFT", of, "TOPLEFT", 12, -12)
+        titleBar:SetPoint("TOPRIGHT", of, "TOPRIGHT", -12, -12)
+        titleBar:SetHeight(30)
+        titleBar:SetFrameLevel(of:GetFrameLevel() + 1)
+        titleBar:EnableMouse(true)
+        titleBar:RegisterForDrag("LeftButton")
+        titleBar:SetScript("OnDragStart", function() of:StartMoving() end)
+        titleBar:SetScript("OnDragStop", function() of:StopMovingOrSizing() end)
+        
+        local title = titleBar:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+        title:SetPoint("CENTER", titleBar, "CENTER", 0, 0)
+        title:SetText("ImprovedGuildWindow Options")
+        
+        local closeBtn = CreateFrame("Button", nil, of, "UIPanelCloseButton")
+        closeBtn:SetPoint("TOPRIGHT", of, "TOPRIGHT", -5, -5)
+        closeBtn:SetFrameLevel(of:GetFrameLevel() + 2)
+        closeBtn:SetScript("OnClick", function() of:Hide() end)
+        
+        -- Content area
+        local content = CreateFrame("Frame", nil, of)
+        content:SetPoint("TOPLEFT", of, "TOPLEFT", 20, -50)
+        content:SetPoint("BOTTOMRIGHT", of, "BOTTOMRIGHT", -20, 20)
+        of.content = content
+        
+        local yOffset = 0
+        
+        -- Visual Settings Section
+        local visualHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+        visualHeader:SetPoint("TOPLEFT", content, "TOPLEFT", 0, yOffset)
+        visualHeader:SetText("Visual Settings")
+        yOffset = yOffset - 30
+        
+        -- Opacity Slider
+        local opacityLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        opacityLabel:SetPoint("TOPLEFT", content, "TOPLEFT", 10, yOffset)
+        opacityLabel:SetText("Window Opacity:")
+        
+        local opacitySlider = CreateFrame("Slider", "IGW_OpacitySlider", content, "OptionsSliderTemplate")
+        opacitySlider:SetPoint("TOPLEFT", opacityLabel, "BOTTOMLEFT", 0, -10)
+        opacitySlider:SetWidth(300)
+        opacitySlider:SetHeight(15)
+        opacitySlider:SetMinMaxValues(0.3, 1.0)
+        opacitySlider:SetValueStep(0.05)
+        opacitySlider:SetValue(IGW_BG_OPACITY)
+        getglobal("IGW_OpacitySliderLow"):SetText("30%")
+        getglobal("IGW_OpacitySliderHigh"):SetText("100%")
+        getglobal("IGW_OpacitySliderText"):SetText(string.format("%.0f%%", IGW_BG_OPACITY * 100))
+        
+        opacitySlider:SetScript("OnValueChanged", function()
+            local value = this:GetValue()
+            getglobal("IGW_OpacitySliderText"):SetText(string.format("%.0f%%", value * 100))
+            -- Will be applied on save
+        end)
+        of.opacitySlider = opacitySlider
+        
+        yOffset = yOffset - 60
+        
+        -- Divider
+        local divider1 = content:CreateTexture(nil, "ARTWORK")
+        divider1:SetTexture("Interface\\DialogFrame\\UI-DialogBox-Divider")
+        divider1:SetPoint("TOP", content, "TOP", 0, yOffset)
+        divider1:SetWidth(600)
+        divider1:SetHeight(16)
+        yOffset = yOffset - 30
+        
+        -- Window Behavior Section
+        local behaviorHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+        behaviorHeader:SetPoint("TOPLEFT", content, "TOPLEFT", 0, yOffset)
+        behaviorHeader:SetText("Window Behavior")
+        yOffset = yOffset - 30
+        
+        -- Remember Open Windows Checkbox
+        local rememberWindowsCheck = CreateFrame("CheckButton", nil, content, "UICheckButtonTemplate")
+        rememberWindowsCheck:SetPoint("TOPLEFT", content, "TOPLEFT", 10, yOffset)
+        rememberWindowsCheck:SetWidth(24)
+        rememberWindowsCheck:SetHeight(24)
+        rememberWindowsCheck:SetChecked((ImprovedGuildWindowDB and ImprovedGuildWindowDB.rememberWindows) or false)
+        
+        local rememberWindowsLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        rememberWindowsLabel:SetPoint("LEFT", rememberWindowsCheck, "RIGHT", 5, 0)
+        rememberWindowsLabel:SetText("Remember which windows are open")
+        
+        of.rememberWindowsCheck = rememberWindowsCheck
+        yOffset = yOffset - 30
+        
+        -- Allow Moving Side Windows Checkbox
+        local allowMoveSideCheck = CreateFrame("CheckButton", nil, content, "UICheckButtonTemplate")
+        allowMoveSideCheck:SetPoint("TOPLEFT", content, "TOPLEFT", 10, yOffset)
+        allowMoveSideCheck:SetWidth(24)
+        allowMoveSideCheck:SetHeight(24)
+        allowMoveSideCheck:SetChecked((ImprovedGuildWindowDB and ImprovedGuildWindowDB.allowMoveSideWindows) or false)
+        
+        local allowMoveSideLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        allowMoveSideLabel:SetPoint("LEFT", allowMoveSideCheck, "RIGHT", 5, 0)
+        allowMoveSideLabel:SetText("Allow moving side windows (Member Details / Guild Info)")
+        
+        of.allowMoveSideCheck = allowMoveSideCheck
+        yOffset = yOffset - 40
+        
+        -- Divider
+        local divider2 = content:CreateTexture(nil, "ARTWORK")
+        divider2:SetTexture("Interface\\DialogFrame\\UI-DialogBox-Divider")
+        divider2:SetPoint("TOP", content, "TOP", 0, yOffset)
+        divider2:SetWidth(600)
+        divider2:SetHeight(16)
+        yOffset = yOffset - 30
+        
+        -- Default View Section
+        local defaultViewHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+        defaultViewHeader:SetPoint("TOPLEFT", content, "TOPLEFT", 0, yOffset)
+        defaultViewHeader:SetText("Default View")
+        yOffset = yOffset - 30
+        
+        -- Default Tab Label
+        local defaultTabLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        defaultTabLabel:SetPoint("TOPLEFT", content, "TOPLEFT", 10, yOffset)
+        defaultTabLabel:SetText("Default tab on open:")
+        yOffset = yOffset - 25
+        
+        -- Radio Buttons for Default Tab
+        local guildMembersRadio = CreateFrame("CheckButton", nil, content, "UIRadioButtonTemplate")
+        guildMembersRadio:SetPoint("TOPLEFT", content, "TOPLEFT", 20, yOffset)
+        guildMembersRadio:SetWidth(20)
+        guildMembersRadio:SetHeight(20)
+        
+        local guildMembersLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        guildMembersLabel:SetPoint("LEFT", guildMembersRadio, "RIGHT", 5, 0)
+        guildMembersLabel:SetText("Guild Members (online only)")
+        
+        yOffset = yOffset - 25
+        
+        local memberDetailsRadio = CreateFrame("CheckButton", nil, content, "UIRadioButtonTemplate")
+        memberDetailsRadio:SetPoint("TOPLEFT", content, "TOPLEFT", 20, yOffset)
+        memberDetailsRadio:SetWidth(20)
+        memberDetailsRadio:SetHeight(20)
+        
+        local memberDetailsLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        memberDetailsLabel:SetPoint("LEFT", memberDetailsRadio, "RIGHT", 5, 0)
+        memberDetailsLabel:SetText("Member Details (all members)")
+        
+        -- Set initial radio button states
+        local defaultTab = (ImprovedGuildWindowDB and ImprovedGuildWindowDB.defaultTab) or "details"
+        if defaultTab == "details" then
+            guildMembersRadio:SetChecked(true)
+            memberDetailsRadio:SetChecked(false)
+        else
+            guildMembersRadio:SetChecked(false)
+            memberDetailsRadio:SetChecked(true)
+        end
+        
+        -- Radio button scripts
+        guildMembersRadio:SetScript("OnClick", function()
+            guildMembersRadio:SetChecked(true)
+            memberDetailsRadio:SetChecked(false)
+        end)
+        
+        memberDetailsRadio:SetScript("OnClick", function()
+            guildMembersRadio:SetChecked(false)
+            memberDetailsRadio:SetChecked(true)
+        end)
+        
+        of.guildMembersRadio = guildMembersRadio
+        of.memberDetailsRadio = memberDetailsRadio
+        
+        -- Save Button
+        local saveBtn = CreateFrame("Button", nil, of, "UIPanelButtonTemplate")
+        saveBtn:SetPoint("BOTTOM", of, "BOTTOM", 0, 15)
+        saveBtn:SetWidth(100)
+        saveBtn:SetHeight(25)
+        saveBtn:SetText("Save")
+        saveBtn:SetScript("OnClick", function()
+            IGW:SaveOptions()
+            of:Hide()
+        end)
+        
+        IGW.optionsFrame = of
+    end
+    
+    local of = IGW.optionsFrame
+    if of:IsVisible() then
+        of:Hide()
+    else
+        -- Anchor top of options window to top of main window
+        of:ClearAllPoints()
+        of:SetPoint("TOP", frame, "TOP", 0, 0)
+        of:Show()
+    end
+end
+
+
+-- Save Options from settings window
+function IGW:SaveOptions()
+    local of = IGW.optionsFrame
+    if not of then return end
+    
+    -- Initialize DB if it doesn't exist
+    if not ImprovedGuildWindowDB then
+        ImprovedGuildWindowDB = {}
+    end
+    
+    -- Save opacity
+    local opacityValue = of.opacitySlider:GetValue()
+    IGW_BG_OPACITY = opacityValue
+    ImprovedGuildWindowDB.opacity = opacityValue
+    
+    -- Apply opacity to all windows immediately
+    if frame then
+        frame:SetBackdropColor(0, 0, 0, opacityValue)
+    end
+    if IGW.detailsFrame then
+        IGW.detailsFrame:SetBackdropColor(0, 0, 0, opacityValue)
+    end
+    if IGW.infoFrame then
+        IGW.infoFrame:SetBackdropColor(0, 0, 0, opacityValue)
+    end
+    
+    -- Save remember windows setting
+    ImprovedGuildWindowDB.rememberWindows = of.rememberWindowsCheck:GetChecked() == 1
+    
+    -- Save allow moving side windows setting
+    ImprovedGuildWindowDB.allowMoveSideWindows = of.allowMoveSideCheck:GetChecked() == 1
+    
+    -- Apply movable state to side windows immediately
+    if IGW.detailsFrame then
+        IGW.detailsFrame:SetMovable(ImprovedGuildWindowDB.allowMoveSideWindows)
+    end
+    if IGW.infoFrame then
+        IGW.infoFrame:SetMovable(ImprovedGuildWindowDB.allowMoveSideWindows)
+    end
+    
+    -- Save which windows are currently open (if remember is enabled)
+    if ImprovedGuildWindowDB.rememberWindows then
+        ImprovedGuildWindowDB.windowStates = {
+            detailsOpen = IGW.detailsFrame and IGW.detailsFrame:IsVisible() or false,
+            infoOpen = IGW.infoFrame and IGW.infoFrame:IsVisible() or false
+        }
+    end
+    
+    -- Save default tab
+    if of.guildMembersRadio:GetChecked() then
+        ImprovedGuildWindowDB.defaultTab = "details"
+    else
+        ImprovedGuildWindowDB.defaultTab = "roster"
+    end
+    
+    DEFAULT_CHAT_FRAME:AddMessage("|cFF00FF00Options saved!|r")
 end
 
 
