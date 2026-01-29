@@ -2,7 +2,7 @@
 
 Enhanced guild management for World of Warcraft 1.12.1 (Turtle WoW).
 
-<img width="1731" height="746" alt="ImprovedGuildWindow A" src="https://github.com/user-attachments/assets/843d0ce6-f472-4da0-8840-f84a94233a25" />
+<img width="1731" height="746" alt="ImprovedGuildWindow A" src="https://github.com/user-attachments/assets/c93831ec-2d1b-4c18-adc8-2459b6615b33" />
 
 ## Installation
 
