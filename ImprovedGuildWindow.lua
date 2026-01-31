@@ -2,7 +2,7 @@
 -- Author: Travis
 
 local IGW = {}
-IGW.VERSION = "2.0"
+IGW.VERSION = "2.1"
 local frame
 local rosterData = {}
 local displayedMembers = {}
@@ -2056,6 +2056,211 @@ function IGW:UpdateGuildInfoWindow()
     end
 end
 
+-- Update Page 3 - Crafters
+function IGW:UpdateCraftersPage()
+    if not IGW.infoFrame then return end
+    local gf = IGW.infoFrame
+    local content = gf.craftersContent
+    if not content then return end
+    
+    -- Clear existing content
+    local children = {content:GetChildren()}
+    for _, child in ipairs(children) do
+        child:Hide()
+        child:SetParent(nil)
+    end
+    
+    -- Parse crafters from public notes (300+ skill level only)
+    local crafters = {}
+    for _, m in ipairs(rosterData or {}) do
+        if m and m.name and m.note then
+            local noteUpper = string.upper(m.note)
+            
+            -- Profession search patterns with abbreviations (crafting professions only)
+            local professions = {
+                {name="Alchemy", patterns={"ALCHEMY", "ALCH", "ALC"}},
+                {name="Blacksmithing", patterns={"BLACKSMITHING", "BLACKSMITH", "SMITH", "BS", "B%.S%."}},
+                {name="Enchanting", patterns={"ENCHANTING", "ENCHANT", "ENCH", "ENC"}},
+                {name="Engineering", patterns={"ENGINEERING", "ENGINEER", "ENG", "ENGI"}},
+                {name="Jewelcrafting", patterns={"JEWELCRAFTING", "JEWEL", "JC", "J%.C%."}},
+                {name="Leatherworking", patterns={"LEATHERWORKING", "LEATHER", "LW", "L%.W%."}},
+                {name="Tailoring", patterns={"TAILORING", "TAILOR", "TAIL", "TLR"}}
+            }
+            
+            for _, prof in ipairs(professions) do
+                for _, pattern in ipairs(prof.patterns) do
+                    local skill = nil
+                    -- Try pattern: ProfessionName 300 or ProfessionName: 300
+                    local _, _, skill1 = string.find(noteUpper, pattern .. "%s*:?%s*(%d+)")
+                    -- Try pattern: 300 ProfessionName
+                    local _, _, skill2 = string.find(noteUpper, "(%d+)%s*" .. pattern)
+                    
+                    skill = skill1 or skill2
+                    
+                    if skill then
+                        local skillNum = tonumber(skill)
+                        -- Only include online players with 300+ skill
+                        if skillNum and skillNum >= 300 and m.online then
+                            -- Check if we already added this profession for this player
+                            local alreadyAdded = false
+                            for _, existing in ipairs(crafters) do
+                                if existing.name == m.name and existing.prof == prof.name then
+                                    alreadyAdded = true
+                                    break
+                                end
+                            end
+                            
+                            if not alreadyAdded then
+                                table.insert(crafters, {
+                                    name = m.name,
+                                    prof = prof.name,
+                                    skill = skillNum,
+                                    online = true
+                                })
+                            end
+                            break -- Found this profession, skip other patterns for it
+                        end
+                    end
+                end
+            end
+        end
+    end
+    
+    -- Group by profession
+    local professionGroups = {}
+    for _, crafter in ipairs(crafters) do
+        if not professionGroups[crafter.prof] then
+            professionGroups[crafter.prof] = {}
+        end
+        table.insert(professionGroups[crafter.prof], crafter)
+    end
+    
+    -- Sort each profession group alphabetically by name
+    for prof, group in pairs(professionGroups) do
+        table.sort(group, function(a, b)
+            return a.name < b.name
+        end)
+    end
+    
+    -- Sort professions alphabetically
+    local sortedProfs = {}
+    for prof, _ in pairs(professionGroups) do
+        table.insert(sortedProfs, prof)
+    end
+    table.sort(sortedProfs)
+    
+    -- Define all 7 crafting professions in order
+    local allProfessions = {
+        "Alchemy", "Blacksmithing", "Enchanting", 
+        "Engineering", "Jewelcrafting", "Leatherworking", 
+        "Tailoring"
+    }
+    
+    -- Display all professions with fixed spacing
+    local yOffset = 0
+    local sectionHeight = 50 -- Height per profession section (title + 2 rows + gap)
+    
+    for _, prof in ipairs(allProfessions) do
+        local group = professionGroups[prof] or {} -- Use empty table if no crafters
+        
+        -- Profession subtitle (centered)
+        local subtitle = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+        subtitle:SetPoint("TOP", content, "TOP", 0, yOffset)
+        subtitle:SetWidth(210)
+        subtitle:SetJustifyH("CENTER")
+        subtitle:SetTextColor(1, 1, 1) -- White color
+        subtitle:SetText(prof)
+        yOffset = yOffset - 18
+        
+        -- Display up to 6 crafters in 2 lines (3 per line, clickable)
+        for line = 1, 2 do
+            local startIdx = (line - 1) * 3 + 1
+            local lineMembers = {}
+            
+            for i = startIdx, math.min(startIdx + 2, table.getn(group)) do
+                table.insert(lineMembers, group[i])
+            end
+            
+            if table.getn(lineMembers) > 0 then
+                -- Create container for this line
+                local lineContainer = CreateFrame("Frame", nil, content)
+                lineContainer:SetPoint("TOP", content, "TOP", 0, yOffset)
+                lineContainer:SetWidth(210)
+                lineContainer:SetHeight(14)
+                
+                -- Calculate actual text widths using a temporary FontString
+                local tempText = lineContainer:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+                local totalWidth = 0
+                local buttonWidths = {}
+                
+                for _, member in ipairs(lineMembers) do
+                    tempText:SetText(member.name)
+                    local nameWidth = tempText:GetStringWidth() + 1 -- Reduced from +2 to +1
+                    table.insert(buttonWidths, nameWidth)
+                    totalWidth = totalWidth + nameWidth
+                end
+                tempText:Hide() -- Hide temporary text
+                
+                -- Add comma widths (", " spacing)
+                if table.getn(lineMembers) > 1 then
+                    tempText:SetText(", ")
+                    local commaWidth = tempText:GetStringWidth()
+                    totalWidth = totalWidth + ((table.getn(lineMembers) - 1) * commaWidth)
+                end
+                
+                -- Starting position (centered)
+                local xOffset = -(totalWidth / 2)
+                
+                -- Create clickable buttons for each name
+                for idx, member in ipairs(lineMembers) do
+                    -- Capture member name in local variable to avoid closure issues
+                    local memberName = member.name
+                    
+                    local nameBtn = CreateFrame("Button", nil, lineContainer)
+                    nameBtn:SetPoint("LEFT", lineContainer, "LEFT", xOffset + 105, 0)
+                    nameBtn:SetWidth(buttonWidths[idx])
+                    nameBtn:SetHeight(14)
+                    
+                    local nameText = nameBtn:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+                    nameText:SetAllPoints(nameBtn)
+                    nameText:SetJustifyH("LEFT")
+                    nameText:SetText(string.format("|cFF00FF00%s|r", memberName))
+                    
+                    nameBtn:SetScript("OnClick", function()
+                        ChatFrameEditBox:SetText("/w " .. memberName .. " ")
+                        ChatFrameEditBox:Show()
+                        ChatFrameEditBox:SetFocus()
+                    end)
+                    
+                    nameBtn:SetScript("OnEnter", function()
+                        nameText:SetText(string.format("|cFFFFFF00%s|r", memberName)) -- Yellow on hover
+                    end)
+                    
+                    nameBtn:SetScript("OnLeave", function()
+                        nameText:SetText(string.format("|cFF00FF00%s|r", memberName)) -- Green normally
+                    end)
+                    
+                    xOffset = xOffset + buttonWidths[idx]
+                    
+                    -- Add comma after name (except last one)
+                    if idx < table.getn(lineMembers) then
+                        local comma = lineContainer:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+                        comma:SetPoint("LEFT", lineContainer, "LEFT", xOffset + 105, 0)
+                        comma:SetText("|cFF00FF00, |r")
+                        tempText:SetText(", ")
+                        xOffset = xOffset + tempText:GetStringWidth()
+                    end
+                end
+            end
+            
+            yOffset = yOffset - 14
+        end
+        
+        -- Gap after each profession
+        yOffset = yOffset - 6
+    end
+end
+
 
 
 -- Toggle Guild Info window (left-side companion window; empty for now)
@@ -2275,6 +2480,34 @@ officersValue:SetJustifyH("CENTER")
 officersValue:SetText("—")
 gf.officersValue = officersValue
 
+-- Page 3 content frame (hidden by default)
+local content3 = CreateFrame("Frame", nil, gf)
+content3:SetPoint("TOPLEFT", gf, "TOPLEFT", 20, -50)
+content3:SetPoint("BOTTOMRIGHT", gf, "BOTTOMRIGHT", -20, 50)
+content3:Hide()
+gf.content3 = content3
+
+-- Page 3 - Max Level Crafters Online
+local craftersTitle = content3:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+craftersTitle:SetPoint("TOP", content3, "TOP", 0, 0)
+craftersTitle:SetJustifyH("CENTER")
+craftersTitle:SetText("Max Level Crafters Online")
+gf.craftersTitle = craftersTitle
+
+-- Instruction text (green)
+local instructionText = content3:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+instructionText:SetPoint("TOP", craftersTitle, "BOTTOM", 0, -6)
+instructionText:SetJustifyH("CENTER")
+instructionText:SetTextColor(0, 1, 0) -- Green
+instructionText:SetText("Click Player to Whisper")
+
+-- Fixed content area for crafters (not scrollable, centered)
+local craftersContent = CreateFrame("Frame", nil, content3)
+craftersContent:SetPoint("TOP", instructionText, "BOTTOM", 0, -6)
+craftersContent:SetWidth(210)
+craftersContent:SetPoint("BOTTOM", content3, "BOTTOM", 0, 50)
+gf.craftersContent = craftersContent
+
 -- Pagination buttons at bottom (match tab button styling)
 local buttonHeight = 25  -- Match tab button height
 local prevBtn = CreateFrame("Button", nil, gf, "UIPanelButtonTemplate")
@@ -2287,7 +2520,14 @@ prevBtn:SetScript("OnClick", function()
         gf.currentPage = 1
         gf.content:Show()
         gf.content2:Hide()
-        gf.pageIndicator:SetText("Page 1 / 2")
+        gf.content3:Hide()
+        gf.pageIndicator:SetText("Page 1 / 3")
+    elseif gf.currentPage == 3 then
+        gf.currentPage = 2
+        gf.content:Hide()
+        gf.content2:Show()
+        gf.content3:Hide()
+        gf.pageIndicator:SetText("Page 2 / 3")
     end
 end)
 gf.prevBtn = prevBtn
@@ -2302,7 +2542,15 @@ nextBtn:SetScript("OnClick", function()
         gf.currentPage = 2
         gf.content:Hide()
         gf.content2:Show()
-        gf.pageIndicator:SetText("Page 2 / 2")
+        gf.content3:Hide()
+        gf.pageIndicator:SetText("Page 2 / 3")
+    elseif gf.currentPage == 2 then
+        gf.currentPage = 3
+        gf.content:Hide()
+        gf.content2:Hide()
+        gf.content3:Show()
+        IGW:UpdateCraftersPage()
+        gf.pageIndicator:SetText("Page 3 / 3")
     end
 end)
 gf.nextBtn = nextBtn
@@ -2310,7 +2558,7 @@ gf.nextBtn = nextBtn
 -- Page indicator (vertically centered with buttons)
 local pageIndicator = gf:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 pageIndicator:SetPoint("BOTTOM", gf, "BOTTOM", 0, 15 + (buttonHeight / 2))
-pageIndicator:SetText("Page 1 / 2")
+pageIndicator:SetText("Page 1 / 3")
 gf.pageIndicator = pageIndicator
 
 -- Initialize to page 1

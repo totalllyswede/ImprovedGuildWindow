@@ -2,7 +2,7 @@
 ## Title: Improved Guild Window
 ## Notes: Enhanced guild management window for Turtle WoW
 ## Author: Olzon
-## Version: 2.0
+## Version: 2.1
 ## SavedVariables: ImprovedGuildWindowDB
 
 Bindings.xml

@@ -50,6 +50,11 @@ Click any member name to view:
 - Top 5 zones (online members)
 - Online officers list
 
+**Page 3:**
+- Max level crafters online (300+ skill)
+- Grouped by profession (clickable names to whisper)
+- Shows: Alchemy, Blacksmithing, Enchanting, Engineering, Jewelcrafting, Leatherworking, Tailoring
+
 ### Sorting & Filtering
 - Click column headers to sort
 - Rank dropdown filter
@@ -65,6 +70,26 @@ Click any member name to view:
 
 ## Configuration
 
+### Crafter Detection (Page 3)
+Add profession info to character **public notes** for automatic detection on Guild Info Page 3.
+
+**Supported formats:**
+- `BS 300` or `Blacksmithing 300`
+- `300 JC` or `300 Jewelcrafting`
+- `Alchemy: 300` or `Alch 300`
+- Multiple professions: `300 JC/300 LW`
+
+**Supported abbreviations:**
+- **Alchemy**: Alchemy, Alch, Alc
+- **Blacksmithing**: Blacksmithing, Blacksmith, Smith, BS, B.S.
+- **Enchanting**: Enchanting, Enchant, Ench, Enc
+- **Engineering**: Engineering, Engineer, Eng, Engi
+- **Jewelcrafting**: Jewelcrafting, Jewel, JC, J.C.
+- **Leatherworking**: Leatherworking, Leather, LW, L.W.
+- **Tailoring**: Tailoring, Tailor, Tail, TLR
+
+Only shows characters with 300+ skill who are currently online. Click names to whisper.
+
 ### Officer Detection
 Edit `OFFICER_RANK_THRESHOLD` in the .lua file (default: 2)
 - 0 = Guild Master only
@@ -77,9 +102,17 @@ Works bidirectionally - view any character to see their alts and main.
 
 ## Version
 
-**2.0** - Latest release
+**2.1** - Latest release
 
 ### Changelog
+
+**2.1**
+- Added Guild Info Page 3: Max Level Crafters Online
+- Displays crafters with 300+ skill (online only)
+- 7 crafting professions: Alchemy, Blacksmithing, Enchanting, Engineering, Jewelcrafting, Leatherworking, Tailoring
+- Flexible profession detection (supports abbreviations and multiple formats)
+- Clickable names to whisper crafters directly
+- Reads from character public notes
 
 **2.0**
 - Complete visual overhaul with solid backgrounds
@@ -102,4 +135,4 @@ Works bidirectionally - view any character to see their alts and main.
 
 ## Author
 
-Olzon - Turtle WoW
+Olzon
