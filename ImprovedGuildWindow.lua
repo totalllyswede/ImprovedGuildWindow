@@ -2,7 +2,7 @@
 -- Author: Travis
 
 local IGW = {}
-IGW.VERSION = "2.1"
+IGW.VERSION = "2.5"
 local frame
 local rosterData = {}
 local displayedMembers = {}
@@ -48,6 +48,53 @@ local function IGW_GetHeaderTopY()
         - (FILTER_ROW_GAP * (FILTER_ROWS - 1))
         - FILTER_EXTRA_SPACING
         - HEADER_BASE_OFFSET_Y
+end
+
+-- Race detection from officer note (first character(s) followed by dash)
+local function IGW_GetRace(officerNote)
+    if not officerNote or officerNote == "" then return "" end
+    
+    -- Check for 2-character codes first (Ta-, He-, Go-)
+    local firstTwo = string.sub(officerNote, 1, 2)
+    local thirdChar = string.sub(officerNote, 3, 3)
+    
+    if thirdChar == "-" then
+        if firstTwo == "Ta" then return "Tauren"
+        elseif firstTwo == "He" then return "High Elf"
+        elseif firstTwo == "Go" then return "Goblin"
+        end
+    end
+    
+    -- Check for single char + dash
+    local firstChar = string.sub(officerNote, 1, 1)
+    local secondChar = string.sub(officerNote, 2, 2)
+    
+    if secondChar ~= "-" then
+        return "" -- No dash found, return empty
+    end
+    
+    if firstChar == "N" then return "Night Elf"
+    elseif firstChar == "D" then return "Dwarf"
+    elseif firstChar == "H" then return "Human"
+    elseif firstChar == "T" then return "Troll"
+    elseif firstChar == "O" then return "Orc"
+    elseif firstChar == "G" then return "Gnome"
+    elseif firstChar == "U" then return "Undead"
+    else return ""
+    end
+end
+
+-- Faction based on race
+local function IGW_GetFaction(race)
+    if race == "" then return "" end
+    
+    if race == "Night Elf" or race == "Dwarf" or race == "Human" or race == "Gnome" or race == "High Elf" then
+        return "Alliance"
+    elseif race == "Troll" or race == "Tauren" or race == "Orc" or race == "Undead" or race == "Goblin" then
+        return "Horde"
+    else
+        return ""
+    end
 end
 
 -- Keybinding strings (shown in ESC > Key Bindings)
@@ -203,6 +250,13 @@ function IGW:CreateMainFrame()
     closeBtn:SetPoint("TOPRIGHT", frame, "TOPRIGHT", -10, -10)
     closeBtn:SetFrameLevel(frame:GetFrameLevel() + 2)
     closeBtn:SetScript("OnClick", function()
+        -- Save window states if remember is enabled
+        if ImprovedGuildWindowDB and ImprovedGuildWindowDB.rememberWindows then
+            ImprovedGuildWindowDB.windowStates = {
+                detailsOpen = IGW.detailsFrame and IGW.detailsFrame:IsVisible() or false,
+                infoOpen = IGW.infoFrame and IGW.infoFrame:IsVisible() or false
+            }
+        end
         frame:Hide()
         -- Close details window when main window closes
         if IGW.detailsFrame then
@@ -579,10 +633,24 @@ scrollFrame:SetPoint("TOPLEFT", frame, "TOPLEFT", 20, headerTopY - 25)
         class:SetJustifyH("LEFT")
         row.class = class
         
-        -- Rank (reuse for note in roster view)
+        -- Race
+        local race = row:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        race:SetPoint("LEFT", row, "LEFT", 245, 0)
+        race:SetWidth(75)
+        race:SetJustifyH("LEFT")
+        row.race = race
+        
+        -- Faction
+        local faction = row:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        faction:SetPoint("LEFT", row, "LEFT", 325, 0)
+        faction:SetWidth(50)
+        faction:SetJustifyH("LEFT")
+        row.faction = faction
+        
+        -- Rank (reuse for note in roster view) - shifted right
         local rank = row:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-        rank:SetPoint("LEFT", row, "LEFT", 245, 0)
-        rank:SetWidth(105)
+        rank:SetPoint("LEFT", row, "LEFT", 380, 0)
+        rank:SetWidth(85)
         rank:SetJustifyH("LEFT")
         row.rank = rank
         
@@ -713,6 +781,57 @@ function IGW:CreateTabs()
     frame.tab2Text = tab2Text
     frame.tab3 = tab3
     frame.tab3Text = tab3Text
+
+    -- Switch to Calendar button (bottom right)
+    local calBtn = CreateFrame("Button", nil, frame)
+    calBtn:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -15, 15)
+    calBtn:SetWidth(140)
+    calBtn:SetHeight(tabHeight)
+    calBtn:SetFrameLevel(frame:GetFrameLevel() + 1)
+
+    calBtn:SetBackdrop({
+        bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        tile = true,
+        tileSize = 16,
+        edgeSize = 16,
+        insets = { left = 3, right = 3, top = 3, bottom = 3 }
+    })
+    calBtn:SetBackdropColor(0.2, 0.2, 0.2, 1)
+    calBtn:SetBackdropBorderColor(0.5, 0.5, 0.5, 1)
+
+    local calBtnText = calBtn:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    calBtnText:SetPoint("CENTER", calBtn, "CENTER", 0, 0)
+    calBtnText:SetText("Switch to Calendar")
+    calBtnText:SetTextColor(0.7, 0.7, 0.7)
+
+    calBtn:SetScript("OnClick", function()
+        -- Save window states before hiding (same as ToggleWindow)
+        if ImprovedGuildWindowDB and ImprovedGuildWindowDB.rememberWindows then
+            ImprovedGuildWindowDB.windowStates = {
+                detailsOpen = IGW.detailsFrame and IGW.detailsFrame:IsVisible() or false,
+                infoOpen = IGW.infoFrame and IGW.infoFrame:IsVisible() or false
+            }
+        end
+        -- Hide main IGW windows
+        frame:Hide()
+        if IGW.detailsFrame then
+            IGW.detailsFrame:Hide()
+        end
+        if IGW.infoFrame then
+            IGW.infoFrame:Hide()
+        end
+        -- Open calendar
+        if IGWCalendarUI and IGWCalendarUI.Show then
+            IGWCalendarUI:Show()
+        end
+    end)
+
+    -- Store ref and apply initial visibility from saved setting
+    frame.calBtn = calBtn
+    if not (ImprovedGuildWindowDB and ImprovedGuildWindowDB.calendarEnabled) then
+        calBtn:Hide()
+    end
 end
 
 -- Switch between tabs
@@ -788,8 +907,10 @@ headers = {
             {text = "Name", width = 110, column = "name"},
             {text = "Level", width = 60, column = "level"},
             {text = "Class", width = 75, column = "class"},
-            {text = "Location", width = 190, column = "zone"},
-            {text = "Rank", width = 135, column = "rank"}
+            {text = "Race", width = 75, column = "race"},
+            {text = "A/H", width = 50, column = "faction"},
+            {text = "Location", width = 145, column = "zone"},
+            {text = "Rank", width = 85, column = "rank"}
         }
     end
     
@@ -860,6 +981,8 @@ function IGW:ApplyRowLayout(tabName, headers)
         row.name:SetJustifyH("LEFT")
         row.level:SetJustifyH("LEFT")
         row.class:SetJustifyH("LEFT")
+        row.race:SetJustifyH("LEFT")
+        row.faction:SetJustifyH("LEFT")
         row.rank:SetJustifyH("LEFT")
         row.note:SetJustifyH("LEFT")
         row.officerNote:SetJustifyH("LEFT")
@@ -891,7 +1014,7 @@ function IGW:ApplyRowLayout(tabName, headers)
             row.officerNote:SetPoint("LEFT", row, "LEFT", colX["lastonline"] + 5, 0)
             row.officerNote:SetWidth(colW["lastonline"] - 10)
         else
-            -- Guild Members tab uses: name, level, class, (location -> row.rank), (rank -> row.note)
+            -- Guild Members tab uses: name, level, class, race, faction, (location -> row.rank), (rank -> row.note)
             row.name:ClearAllPoints()
             row.name:SetPoint("LEFT", row, "LEFT", colX["name"] + 5, 0)
             row.name:SetWidth(colW["name"] - 10)
@@ -903,6 +1026,14 @@ function IGW:ApplyRowLayout(tabName, headers)
             row.class:ClearAllPoints()
             row.class:SetPoint("LEFT", row, "LEFT", colX["class"] + 5, 0)
             row.class:SetWidth(colW["class"] - 10)
+
+            row.race:ClearAllPoints()
+            row.race:SetPoint("LEFT", row, "LEFT", colX["race"] + 5, 0)
+            row.race:SetWidth(colW["race"] - 10)
+
+            row.faction:ClearAllPoints()
+            row.faction:SetPoint("LEFT", row, "LEFT", colX["faction"] + 5, 0)
+            row.faction:SetWidth(colW["faction"] - 10)
 
             row.rank:ClearAllPoints()
             row.rank:SetPoint("LEFT", row, "LEFT", colX["zone"] + 5, 0)
@@ -920,64 +1051,16 @@ end
 
 -- Show officer note edit dialog
 function IGW:ShowOfficerNoteEdit(index, memberName)
-    local dialog = StaticPopupDialogs["IGW_EDIT_OFFICER_NOTE"]
-    if not dialog then
-        StaticPopupDialogs["IGW_EDIT_OFFICER_NOTE"] = {
-            text = "Edit Officer Note for %s",
-            button1 = "Save",
-            button2 = "Cancel",
-            hasEditBox = 1,
-            maxLetters = 31,
-            OnAccept = function()
-                local text = getglobal(this:GetParent():GetName().."EditBox"):GetText()
-                GuildRosterSetOfficerNote(this:GetParent().data, text)
-            end,
-            OnShow = function()
-                getglobal(this:GetName().."EditBox"):SetText(this.currentNote or "")
-            end,
-            timeout = 0,
-            whileDead = 1,
-            hideOnEscape = 1
-        }
-        dialog = StaticPopupDialogs["IGW_EDIT_OFFICER_NOTE"]
-    end
-    
-    local popup = StaticPopup_Show("IGW_EDIT_OFFICER_NOTE", memberName)
-    if popup then
-        popup.data = index
-        popup.currentNote = rosterData[index].officernote or ""
-    end
+    -- Use default WoW dialog
+    SetGuildRosterSelection(index)
+    StaticPopup_Show("SET_GUILDOFFICERNOTE")
 end
 
 -- Show public note edit dialog
 function IGW:ShowPublicNoteEdit(index, memberName)
-    local dialog = StaticPopupDialogs["IGW_EDIT_PUBLIC_NOTE"]
-    if not dialog then
-        StaticPopupDialogs["IGW_EDIT_PUBLIC_NOTE"] = {
-            text = "Edit Public Note for %s",
-            button1 = "Save",
-            button2 = "Cancel",
-            hasEditBox = 1,
-            maxLetters = 31,
-            OnAccept = function()
-                local text = getglobal(this:GetParent():GetName().."EditBox"):GetText()
-                GuildRosterSetPublicNote(this:GetParent().data, text)
-            end,
-            OnShow = function()
-                getglobal(this:GetName().."EditBox"):SetText(this.currentNote or "")
-            end,
-            timeout = 0,
-            whileDead = 1,
-            hideOnEscape = 1
-        }
-        dialog = StaticPopupDialogs["IGW_EDIT_PUBLIC_NOTE"]
-    end
-
-    local popup = StaticPopup_Show("IGW_EDIT_PUBLIC_NOTE", memberName)
-    if popup then
-        popup.data = index
-        popup.currentNote = rosterData[index].note or ""
-    end
+    -- Use default WoW dialog
+    SetGuildRosterSelection(index)
+    StaticPopup_Show("SET_GUILDPLAYERNOTE")
 end
 
 -- Show member details window
@@ -1120,6 +1203,14 @@ function IGW:ShowMemberDetails(index)
         onlineValue:SetPoint("LEFT", onlineLabel, "RIGHT", 10, 0)
         onlineValue:SetText("")
         df.onlineValue = onlineValue
+        
+        -- Faction icon (top right, above divider)
+        local factionIcon = df:CreateTexture(nil, "ARTWORK")
+        factionIcon:SetWidth(48)
+        factionIcon:SetHeight(48)
+        factionIcon:SetPoint("TOPRIGHT", df, "TOPRIGHT", -12, -40)
+        factionIcon:Hide() -- Hidden by default
+        df.factionIcon = factionIcon
         
         yOffset = yOffset - 30
         
@@ -1292,12 +1383,25 @@ yOffset = yOffset - (buttonHeight + buttonYGap)
     
     -- Set values
     df.nameValue:SetText(member.name or "Unknown")
-    df.levelValue:SetText(tostring(member.level or "?"))
     
-    -- Class with color
+    -- Get race from officer note
+    local race = IGW_GetRace(member.officernote or "")
+    
+    -- Get class color
     local color = CLASS_COLORS[member.class] or {r=1, g=1, b=1}
-    df.classValue:SetTextColor(color.r, color.g, color.b)
-    df.classValue:SetText(member.class or "")
+    local classColorCode = string.format("|cFF%02x%02x%02x", color.r * 255, color.g * 255, color.b * 255)
+    
+    -- Build level display: "Level Race Class" with class colored
+    local levelText = tostring(member.level or "?")
+    if race ~= "" then
+        levelText = levelText .. " " .. race
+    end
+    levelText = levelText .. " " .. classColorCode .. (member.class or "") .. "|r"
+    
+    df.levelValue:SetText(levelText)
+    
+    -- Clear the separate class field (now included in levelValue)
+    df.classValue:SetText("")
     
     df.rankValue:SetText(member.rank or "")
     df.zoneValue:SetText(member.zone or "Unknown")
@@ -1309,6 +1413,18 @@ yOffset = yOffset - (buttonHeight + buttonYGap)
     else
         df.onlineValue:SetTextColor(0.5, 0.5, 0.5)
         df.onlineValue:SetText("Offline")
+    end
+    
+    -- Faction icon
+    local faction = IGW_GetFaction(race)
+    if faction == "Alliance" then
+        df.factionIcon:SetTexture("Interface\\TargetingFrame\\UI-PVP-Alliance")
+        df.factionIcon:Show()
+    elseif faction == "Horde" then
+        df.factionIcon:SetTexture("Interface\\TargetingFrame\\UI-PVP-Horde")
+        df.factionIcon:Show()
+    else
+        df.factionIcon:Hide() -- No faction data
     end
     
     df.noteValue:SetText(member.note or "")
@@ -1648,6 +1764,18 @@ function IGW:UpdateRosterDisplay()
         elseif sortColumn == "zone" then
             aVal = a.data.zone or ""
             bVal = b.data.zone or ""
+        elseif sortColumn == "race" then
+            local aRace = IGW_GetRace(a.data.officernote or "")
+            local bRace = IGW_GetRace(b.data.officernote or "")
+            aVal = aRace
+            bVal = bRace
+        elseif sortColumn == "faction" then
+            local aRace = IGW_GetRace(a.data.officernote or "")
+            local bRace = IGW_GetRace(b.data.officernote or "")
+            local aFaction = IGW_GetFaction(aRace)
+            local bFaction = IGW_GetFaction(bRace)
+            aVal = aFaction
+            bVal = bFaction
         end
         
         if sortAscending then
@@ -1708,6 +1836,10 @@ function IGW:UpdateRosterDisplay()
             
             if currentTab == "roster" then
                 -- Roster view columns: Name, Level, Rank, Note, Officer Note, Last Online
+                
+                -- Hide Race and Faction (not used in this view)
+                row.race:SetText("")
+                row.faction:SetText("")
                 
                 -- Name (without offline tag)
                 row.name:SetText(member.name or "")
@@ -1788,6 +1920,23 @@ function IGW:UpdateRosterDisplay()
                 local color = CLASS_COLORS[member.class] or {r=1, g=1, b=1}
                 row.class:SetTextColor(color.r, color.g, color.b)
                 row.class:SetText(member.class or "")
+                
+                -- Race
+                local race = IGW_GetRace(member.officernote or "")
+                row.race:SetText(race)
+                row.race:SetTextColor(1, 1, 1)
+                
+                -- Faction
+                local faction = IGW_GetFaction(race)
+                if faction == "Alliance" then
+                    row.faction:SetTextColor(0.2, 0.5, 1) -- Blue
+                    row.faction:SetText("A")
+                elseif faction == "Horde" then
+                    row.faction:SetTextColor(1, 0.2, 0.2) -- Red
+                    row.faction:SetText("H")
+                else
+                    row.faction:SetText("") -- Blank for unknown
+                end
                 
                 -- Location (use rank field for display)
                 if member.online then
@@ -2829,6 +2978,20 @@ function IGW:ToggleOptionsWindow()
         allowMoveSideLabel:SetText("Allow moving side windows (Member Details / Guild Info)")
         
         of.allowMoveSideCheck = allowMoveSideCheck
+        yOffset = yOffset - 30
+        
+        -- Use Calendar Features Checkbox
+        local calendarEnabledCheck = CreateFrame("CheckButton", nil, content, "UICheckButtonTemplate")
+        calendarEnabledCheck:SetPoint("TOPLEFT", content, "TOPLEFT", 10, yOffset)
+        calendarEnabledCheck:SetWidth(24)
+        calendarEnabledCheck:SetHeight(24)
+        calendarEnabledCheck:SetChecked((ImprovedGuildWindowDB and ImprovedGuildWindowDB.calendarEnabled) or false)
+        
+        local calendarEnabledLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        calendarEnabledLabel:SetPoint("LEFT", calendarEnabledCheck, "RIGHT", 5, 0)
+        calendarEnabledLabel:SetText("Use Calendar Features")
+        
+        of.calendarEnabledCheck = calendarEnabledCheck
         yOffset = yOffset - 40
         
         -- Divider
@@ -2961,6 +3124,10 @@ function IGW:SaveOptions()
         if of and of.bgTexture then
             of.bgTexture:SetTexture(selectedColor.r, selectedColor.g, selectedColor.b, 0.9)
         end
+        -- Apply to calendar windows
+        if IGWCalendarUI and IGWCalendarUI.ApplyTheme then
+            IGWCalendarUI:ApplyTheme(selectedColor.r, selectedColor.g, selectedColor.b, opacityValue)
+        end
         
         -- Save background color
         ImprovedGuildWindowDB.bgColor = {r = selectedColor.r, g = selectedColor.g, b = selectedColor.b}
@@ -2978,6 +3145,24 @@ function IGW:SaveOptions()
     end
     if IGW.infoFrame then
         IGW.infoFrame:SetMovable(ImprovedGuildWindowDB.allowMoveSideWindows)
+    end
+    
+    -- Save calendar enabled setting and apply immediately
+    ImprovedGuildWindowDB.calendarEnabled = of.calendarEnabledCheck:GetChecked() == 1
+    if frame and frame.calBtn then
+        if ImprovedGuildWindowDB.calendarEnabled then
+            frame.calBtn:Show()
+            -- Join sync channel if not already joined
+            if IGWCalendar and IGWCalendar.JoinChannel then
+                IGWCalendar:JoinChannel()
+            end
+        else
+            frame.calBtn:Hide()
+            -- Leave sync channel
+            if IGWCalendar and IGWCalendar.LeaveChannel then
+                IGWCalendar:LeaveChannel()
+            end
+        end
     end
     
     -- Save which windows are currently open (if remember is enabled)
@@ -3008,6 +3193,12 @@ SlashCmdList["IMPROVEDGUILDWINDOW"] = function(msg)
         IGW:ToggleWindow()
     elseif msg == "hide" then
         frame:Hide()
+    elseif msg == "calendar" or msg == "cal" then
+        if IGWCalendarUI and IGWCalendarUI.Toggle then
+            IGWCalendarUI:Toggle()
+        else
+            DEFAULT_CHAT_FRAME:AddMessage("IGW: Calendar not loaded", 1, 0, 0)
+        end
     elseif msg == "debug" then
         DEFAULT_CHAT_FRAME:AddMessage("=== IGW Debug Info ===")
         DEFAULT_CHAT_FRAME:AddMessage("Total roster data: " .. table.getn(rosterData))
@@ -3044,6 +3235,11 @@ SlashCmdList["IMPROVEDGUILDWINDOW"] = function(msg)
         DEFAULT_CHAT_FRAME:AddMessage("/igw hide - Hide window")
         DEFAULT_CHAT_FRAME:AddMessage("/igw debug - Show debug info")
     end
+end
+
+-- Global entry point for other addon files (e.g. calendar switching back)
+function IGW_ToggleWindow()
+    IGW:ToggleWindow()
 end
 
 -- Initialize addon

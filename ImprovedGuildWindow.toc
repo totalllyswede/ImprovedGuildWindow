@@ -1,9 +1,11 @@
 ## Interface: 11200
 ## Title: Improved Guild Window
-## Notes: Enhanced guild management window for Turtle WoW
+## Notes: Enhanced guild management for World of Warcraft 1.12.1 (Turtle WoW)
 ## Author: Olzon
-## Version: 2.1
-## SavedVariables: ImprovedGuildWindowDB
+## Version: 2.5
+## SavedVariables: ImprovedGuildWindowDB, IGWCalendarDB
 
 Bindings.xml
 ImprovedGuildWindow.lua
+IGW_GuildCalendarChannel.lua
+IGW_GuildCalendarWindow.lua

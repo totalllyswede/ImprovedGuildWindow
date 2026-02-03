@@ -90,6 +90,30 @@ Add profession info to character **public notes** for automatic detection on Gui
 
 Only shows characters with 300+ skill who are currently online. Click names to whisper.
 
+### Race and Faction Detection
+Add race code to character **officer notes** for automatic race and faction display.
+
+**Format:** Race code must be followed by a dash (-) at the start of the officer note.
+
+**Supported race codes:**
+- **N-** = Night Elf (Alliance)
+- **D-** = Dwarf (Alliance)
+- **H-** = Human (Alliance)
+- **G-** = Gnome (Alliance)
+- **He-** = High Elf (Alliance)
+- **O-** = Orc (Horde)
+- **T-** = Troll (Horde)
+- **Ta-** = Tauren (Horde)
+- **U-** = Undead (Horde)
+- **Go-** = Goblin (Horde)
+
+**Examples:**
+- `O-` or `O- Main Tank` = Orc, displays "Orc" in Race column and "H" in A/H column
+- `He- Alt of Mainchar` = High Elf, displays "High Elf" in Race column and "A" in A/H column
+- `D- 300 BS/300 LW` = Dwarf, displays race and faction with profession info intact
+
+Race appears in Guild Members tab and Member Details window. Faction icon (Alliance/Horde) appears in Member Details window. If no race code is found, cells remain blank.
+
 ### Officer Detection
 Edit `OFFICER_RANK_THRESHOLD` in the .lua file (default: 2)
 - 0 = Guild Master only
@@ -102,9 +126,24 @@ Works bidirectionally - view any character to see their alts and main.
 
 ## Version
 
-**2.1** - Latest release
+**2.3** - Latest release
 
 ### Changelog
+
+**2.3**
+- Added Goblin (Go-) and High Elf (He-) race support
+- Fixed "Remember Windows" setting to save when using X button to close
+- Changed to use default WoW note edit dialogs (shows current note correctly)
+- 10 total races now supported (5 Alliance, 5 Horde)
+
+**2.2**
+- Added Race and Faction columns to Guild Members tab
+- Race detection from officer notes (requires dash format: "O-", "N-", etc.)
+- Faction column shows "A" (Alliance, blue) or "H" (Horde, red)
+- Race displayed in Member Details window (Level: X Race Class format)
+- Faction icon in Member Details window (Alliance/Horde emblems)
+- Clickable crafter names on Guild Info Page 3 to whisper directly
+- Race/Faction cells remain blank when no data present
 
 **2.1**
 - Added Guild Info Page 3: Max Level Crafters Online
