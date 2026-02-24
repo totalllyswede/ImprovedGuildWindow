@@ -2,7 +2,7 @@
 ## Title: Improved Guild Window
 ## Notes: Enhanced guild management for World of Warcraft 1.12.1 (Turtle WoW)
 ## Author: Olzon
-## Version: 2.6
+## Version: 2.7
 ## SavedVariables: ImprovedGuildWindowDB, IGWCalendarDB
 
 Bindings.xml

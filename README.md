@@ -142,9 +142,19 @@ Works bidirectionally - view any character to see their alts and main.
 
 ## Version
 
-**2.6** - Latest release
+**2.7** - Latest release
 
 ### Changelog
+
+**2.7**
+- Added "Show offline members by default" option (Member Details tab)
+- Added "Remember sorting" option (column and direction persistence)
+- Level column now defaults to descending on first click (60→1)
+- Clear/Refresh button now also resets sorting to defaults
+- Member Details tab now respects saved Show Offline preference
+- Fixed sorting persistence: tabs now respect Remember Sorting setting
+- Reduced options menu spacing for better fit
+- Fixed RaiseFrame error (removed non-existent 1.12.1 function)
 
 **2.6**
 - Added experimental Calendar Features (opt-in via Options menu)

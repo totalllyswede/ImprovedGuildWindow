@@ -2,7 +2,7 @@
 -- Author: Travis
 
 local IGW = {}
-IGW.VERSION = "2.6"
+IGW.VERSION = "2.7"
 local frame
 local rosterData = {}
 local displayedMembers = {}
@@ -171,6 +171,13 @@ function IGW:InitializeSavedVariables()
     sortColumn = ImprovedGuildWindowDB.sortColumn or "name"
     sortAscending = ImprovedGuildWindowDB.sortAscending
     if sortAscending == nil then sortAscending = true end
+    
+    -- If rememberSorting is off, reset to defaults
+    if ImprovedGuildWindowDB.rememberSorting == false then
+        sortColumn = "name"
+        sortAscending = true
+    end
+    
     showOffline = ImprovedGuildWindowDB.showOffline
     if showOffline == nil then showOffline = true end
     
@@ -542,6 +549,21 @@ frame.advSearchOfficerNoteLabel = officerNoteLabel
             UIDropDownMenu_SetText("All Ranks", rankDropdown)
         end
         
+        -- Reset sorting to default
+        sortColumn = "rank"
+        sortAscending = false
+        
+        -- Update header arrows
+        if frame.headerButtons then
+            for _, btn in ipairs(frame.headerButtons) do
+                if btn.column == sortColumn then
+                    btn.arrow:SetText(sortAscending and "^" or "v")
+                else
+                    btn.arrow:SetText("")
+                end
+            end
+        end
+        
         -- Refresh guild roster
         GuildRoster()
         IGW:UpdateRosterDisplay()
@@ -845,9 +867,11 @@ function IGW:SwitchTab(tabName)
         frame.tab1Text:SetTextColor(1, 1, 1)
         frame.tab2Text:SetTextColor(0.7, 0.7, 0.7)
         
-        -- Set default sorting
-        sortColumn = "rank"
-        sortAscending = false  -- Descending
+        -- Set default sorting (only if not remembering)
+        if not ImprovedGuildWindowDB or ImprovedGuildWindowDB.rememberSorting == false then
+            sortColumn = "rank"
+            sortAscending = false  -- Descending
+        end
         
         -- Hide offline by default
         showOffline = false
@@ -864,14 +888,16 @@ function IGW:SwitchTab(tabName)
         frame.tab1Text:SetTextColor(0.7, 0.7, 0.7)
         frame.tab2Text:SetTextColor(1, 1, 1)
         
-        -- Set default sorting
-        sortColumn = "rank"
-        sortAscending = false  -- Descending
+        -- Set default sorting (only if not remembering)
+        if not ImprovedGuildWindowDB or ImprovedGuildWindowDB.rememberSorting == false then
+            sortColumn = "rank"
+            sortAscending = false  -- Descending
+        end
         
-        -- Show offline on this tab
-        showOffline = true
+        -- Show offline on this tab (use saved preference)
+        showOffline = (ImprovedGuildWindowDB and ImprovedGuildWindowDB.showOffline ~= false)
         if frame.offlineCheck then
-            frame.offlineCheck:SetChecked(true)
+            frame.offlineCheck:SetChecked(showOffline)
         end
         
         -- Show roster columns
@@ -1624,10 +1650,11 @@ function IGW:SortRoster(column)
         sortAscending = not sortAscending
     else
         sortColumn = column
-        sortAscending = true
+        -- Level defaults to descending (high to low), others ascending
+        sortAscending = (column ~= "level")
     end
     
-    if ImprovedGuildWindowDB then
+    if ImprovedGuildWindowDB and ImprovedGuildWindowDB.rememberSorting ~= false then
         ImprovedGuildWindowDB.sortColumn = sortColumn
         ImprovedGuildWindowDB.sortAscending = sortAscending
     end
@@ -2813,7 +2840,7 @@ function IGW:ToggleOptionsWindow()
         local visualHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
         visualHeader:SetPoint("TOPLEFT", content, "TOPLEFT", 0, yOffset)
         visualHeader:SetText("Visual Settings")
-        yOffset = yOffset - 30
+        yOffset = yOffset - 25
         
         -- Opacity Slider
         local opacityLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -2950,7 +2977,7 @@ function IGW:ToggleOptionsWindow()
         local behaviorHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
         behaviorHeader:SetPoint("TOPLEFT", content, "TOPLEFT", 0, yOffset)
         behaviorHeader:SetText("Window Behavior")
-        yOffset = yOffset - 30
+        yOffset = yOffset - 25
         
         -- Remember Open Windows Checkbox
         local rememberWindowsCheck = CreateFrame("CheckButton", nil, content, "UICheckButtonTemplate")
@@ -2964,7 +2991,7 @@ function IGW:ToggleOptionsWindow()
         rememberWindowsLabel:SetText("Remember which windows are open")
         
         of.rememberWindowsCheck = rememberWindowsCheck
-        yOffset = yOffset - 30
+        yOffset = yOffset - 25
         
         -- Allow Moving Side Windows Checkbox
         local allowMoveSideCheck = CreateFrame("CheckButton", nil, content, "UICheckButtonTemplate")
@@ -2978,7 +3005,7 @@ function IGW:ToggleOptionsWindow()
         allowMoveSideLabel:SetText("Allow moving side windows (Member Details / Guild Info)")
         
         of.allowMoveSideCheck = allowMoveSideCheck
-        yOffset = yOffset - 30
+        yOffset = yOffset - 25
         
         -- Use Calendar Features Checkbox
         local calendarEnabledCheck = CreateFrame("CheckButton", nil, content, "UICheckButtonTemplate")
@@ -2992,7 +3019,35 @@ function IGW:ToggleOptionsWindow()
         calendarEnabledLabel:SetText("Use Calendar Features (Experimental - still being tested)")
         
         of.calendarEnabledCheck = calendarEnabledCheck
-        yOffset = yOffset - 40
+        yOffset = yOffset - 25
+        
+        -- Show Offline by Default Checkbox
+        local showOfflineDefaultCheck = CreateFrame("CheckButton", nil, content, "UICheckButtonTemplate")
+        showOfflineDefaultCheck:SetPoint("TOPLEFT", content, "TOPLEFT", 10, yOffset)
+        showOfflineDefaultCheck:SetWidth(24)
+        showOfflineDefaultCheck:SetHeight(24)
+        showOfflineDefaultCheck:SetChecked((ImprovedGuildWindowDB and ImprovedGuildWindowDB.showOffline ~= false))
+        
+        local showOfflineDefaultLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        showOfflineDefaultLabel:SetPoint("LEFT", showOfflineDefaultCheck, "RIGHT", 5, 0)
+        showOfflineDefaultLabel:SetText("Show offline members by default (Member Details tab)")
+        
+        of.showOfflineDefaultCheck = showOfflineDefaultCheck
+        yOffset = yOffset - 25
+        
+        -- Remember Sorting Checkbox
+        local rememberSortingCheck = CreateFrame("CheckButton", nil, content, "UICheckButtonTemplate")
+        rememberSortingCheck:SetPoint("TOPLEFT", content, "TOPLEFT", 10, yOffset)
+        rememberSortingCheck:SetWidth(24)
+        rememberSortingCheck:SetHeight(24)
+        rememberSortingCheck:SetChecked((ImprovedGuildWindowDB and ImprovedGuildWindowDB.rememberSorting ~= false))
+        
+        local rememberSortingLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        rememberSortingLabel:SetPoint("LEFT", rememberSortingCheck, "RIGHT", 5, 0)
+        rememberSortingLabel:SetText("Remember sorting (column and direction)")
+        
+        of.rememberSortingCheck = rememberSortingCheck
+        yOffset = yOffset - 30
         
         -- Divider
         local divider2 = content:CreateTexture(nil, "ARTWORK")
@@ -3000,13 +3055,13 @@ function IGW:ToggleOptionsWindow()
         divider2:SetPoint("TOP", content, "TOP", 103, yOffset)
         divider2:SetWidth(830)
         divider2:SetHeight(16)
-        yOffset = yOffset - 30
+        yOffset = yOffset - 25
         
         -- Default View Section
         local defaultViewHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
         defaultViewHeader:SetPoint("TOPLEFT", content, "TOPLEFT", 0, yOffset)
         defaultViewHeader:SetText("Default View")
-        yOffset = yOffset - 30
+        yOffset = yOffset - 25
         
         -- Default Tab Label
         local defaultTabLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -3164,6 +3219,16 @@ function IGW:SaveOptions()
             end
         end
     end
+    
+    -- Save show offline default setting and apply immediately
+    ImprovedGuildWindowDB.showOffline = of.showOfflineDefaultCheck:GetChecked() == 1
+    showOffline = ImprovedGuildWindowDB.showOffline
+    if frame and frame.offlineCheck then
+        frame.offlineCheck:SetChecked(showOffline)
+    end
+    
+    -- Save remember sorting setting
+    ImprovedGuildWindowDB.rememberSorting = of.rememberSortingCheck:GetChecked() == 1
     
     -- Save which windows are currently open (if remember is enabled)
     if ImprovedGuildWindowDB.rememberWindows then
