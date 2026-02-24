@@ -12,6 +12,22 @@ Enhanced guild management for World of Warcraft 1.12.1 (Turtle WoW).
 
 ## Features
 
+### Calendar Features (Experimental)
+**Note: Calendar features are currently experimental and still being tested.**
+
+The calendar system allows guild-wide event coordination through a shared sync channel:
+- Create and manage guild events with date, time, and duration
+- Automatic guild-wide sync through custom chat channel
+- Month view with color-coded event indicators
+- Event types: Raid, Dungeon, PvP, Guild Event, Meeting, Social
+
+To enable: Options → Window Behavior → "Use Calendar Features"
+
+When enabled:
+- "Switch to Calendar" button appears in main window
+- Auto-joins guild sync channel on login
+- Broadcasts event changes to all guild members with calendar enabled
+
 ### Three View Modes
 - **Guild Members** - Online members only, sorted by rank
 - **Member Details** - All members with Last Online column
@@ -126,9 +142,26 @@ Works bidirectionally - view any character to see their alts and main.
 
 ## Version
 
-**2.3** - Latest release
+**2.6** - Latest release
 
 ### Changelog
+
+**2.6**
+- Added experimental Calendar Features (opt-in via Options menu)
+- Guild-wide event sync through custom chat channel
+- Month view with color-coded event indicators by type
+- Day picker dialog with proper alignment and headers
+- Calendar toggle: auto-join/leave sync channel, hide/show button
+- Fixed RaiseFrame error on window drag (not available in 1.12.1)
+- Normalized window strata hierarchy for proper focus handling
+- Improved sync protocol: rank-based delays with random jitter to prevent collision
+
+**2.5**
+- Calendar system foundation (internal build)
+
+**2.4**
+- Enhanced member details panel layout
+- Improved window positioning and drag handling
 
 **2.3**
 - Added Goblin (Go-) and High Elf (He-) race support

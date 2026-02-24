@@ -354,10 +354,11 @@ function IGWCalendar:OnChannelMessage(message, sender)
         -- Don't respond to your own sync request
         if requester == UnitName("player") then return end
         
-        -- Set up rank-based delay: rank 0 = 0.5s, rank 1 = 1.0s, rank 2 = 1.5s, etc.
+        -- Set up rank-based delay: rank 0 = 0.75s, rank 1 = 1.5s, rank 2 = 2.25s, etc.
+        -- Random jitter 0-0.3s added to break ties between same-rank players
         local myRank = GetPlayerRankIndex(UnitName("player"))
         pendingSyncRequester = requester
-        pendingSyncDelay = 0.5 + (myRank * 0.5)
+        pendingSyncDelay = 0.75 + (myRank * 0.75) + (math.random() * 0.3)
         syncReplySeen = false
         
     elseif cmd == "SYNC_REPLY" then

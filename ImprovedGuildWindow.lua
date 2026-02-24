@@ -2,7 +2,7 @@
 -- Author: Travis
 
 local IGW = {}
-IGW.VERSION = "2.5"
+IGW.VERSION = "2.6"
 local frame
 local rosterData = {}
 local displayedMembers = {}
@@ -196,8 +196,8 @@ function IGW:CreateMainFrame()
     IGW_AddToSpecialFrames("ImprovedGuildWindowFrame", false)
     frame:SetWidth(ImprovedGuildWindowDB.width or 650)
     frame:SetHeight(ImprovedGuildWindowDB.height or 500)
-    frame:SetFrameStrata("MEDIUM")
-    frame:SetFrameLevel(1)
+    frame:SetFrameStrata("HIGH")
+    frame:SetFrameLevel(20)
     frame:SetMovable(true)
     frame:EnableMouse(true)
     frame:SetClampedToScreen(true)
@@ -1074,8 +1074,8 @@ function IGW:ShowMemberDetails(index)
         IGW_AddToSpecialFrames("IGW_DetailsFrame", true)
         df:SetWidth(250)
         df:SetHeight(frame:GetHeight())
-        df:SetFrameStrata("MEDIUM")
-        df:SetFrameLevel(10)
+        df:SetFrameStrata("HIGH")
+        df:SetFrameLevel(30)
         -- Only allow moving if setting is enabled
         df:SetMovable((ImprovedGuildWindowDB and ImprovedGuildWindowDB.allowMoveSideWindows) or false)
         df:EnableMouse(true)
@@ -2422,8 +2422,8 @@ function IGW:ToggleGuildInfoWindow()
         IGW_AddToSpecialFrames("IGW_GuildInfoFrame", true)
         gf:SetWidth(250)
         gf:SetHeight(frame:GetHeight())
-        gf:SetFrameStrata("MEDIUM")
-            gf:SetFrameLevel(10)
+        gf:SetFrameStrata("HIGH")
+        gf:SetFrameLevel(30)
         -- Only allow moving if setting is enabled
         gf:SetMovable((ImprovedGuildWindowDB and ImprovedGuildWindowDB.allowMoveSideWindows) or false)
         gf:EnableMouse(true)
@@ -2752,7 +2752,7 @@ function IGW:ToggleOptionsWindow()
         of:SetWidth(650)  -- Same width as main window
         of:SetHeight(500)  -- Same height as main window
         of:SetFrameStrata("DIALOG")
-        of:SetFrameLevel(100)
+        of:SetFrameLevel(50)
         of:SetMovable(true)
         of:EnableMouse(true)
         of:SetClampedToScreen(true)
@@ -2989,7 +2989,7 @@ function IGW:ToggleOptionsWindow()
         
         local calendarEnabledLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         calendarEnabledLabel:SetPoint("LEFT", calendarEnabledCheck, "RIGHT", 5, 0)
-        calendarEnabledLabel:SetText("Use Calendar Features")
+        calendarEnabledLabel:SetText("Use Calendar Features (Experimental - still being tested)")
         
         of.calendarEnabledCheck = calendarEnabledCheck
         yOffset = yOffset - 40
