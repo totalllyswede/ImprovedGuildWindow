@@ -4,7 +4,7 @@ Enhanced guild management for World of Warcraft 1.12.1 (Turtle WoW).
 
 ![A](https://github.com/user-attachments/assets/17f01d09-fcb2-4c93-be6b-f589f8871850)
 
-##Side Panel Pages
+## Side Panel Pages
 ![Side](https://github.com/user-attachments/assets/3152a431-8f0b-4f0d-a86f-8a656d25ed71)
 
 
