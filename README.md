@@ -61,15 +61,21 @@ Click any member name to view:
 - Guild information text
 
 **Page 2:**
-- Class distribution bar graph
-- Level 60 count
-- Top 5 zones (online members)
+- Class distribution bar graph (all levels)
+- Level 60 class distribution bar graph
 - Online officers list
 
 **Page 3:**
 - Max level crafters online (300+ skill)
 - Grouped by profession (clickable names to whisper)
 - Shows: Alchemy, Blacksmithing, Enchanting, Engineering, Jewelcrafting, Leatherworking, Tailoring
+
+**Page 4:**
+- Suggested Dungeons based on online members' levels
+- Shows up to 22 dungeons sorted by minimum level (lowest to highest)
+- Displays how many online players are in range for each dungeon
+- Only shows dungeons with at least 4 online members in range
+- Color-coded by your level: green (in range), yellow (±3 levels), red (too low), gray (too high)
 
 ### Sorting & Filtering
 - Click column headers to sort

@@ -3,6 +3,14 @@
 
 local IGW = {}
 IGW.VERSION = "2.7"
+
+-- Global function for keybind (must be defined early)
+function ImprovedGuildWindow_Toggle()
+    if IGW and IGW.ToggleWindow then
+        IGW:ToggleWindow()
+    end
+end
+
 local frame
 local rosterData = {}
 local displayedMembers = {}
@@ -2051,10 +2059,6 @@ function IGW:ToggleWindow()
     end
 end
 
--- Global function for keybind
-function ImprovedGuildWindow_Toggle()
-    IGW:ToggleWindow()
-end
 -- Update Guild Info window contents
 function IGW:UpdateGuildInfoWindow()
     if not IGW.infoFrame then return end
@@ -2163,49 +2167,70 @@ function IGW:UpdateGuildInfoWindow()
         yOffset = yOffset - (barHeight + barGap)
     end
     
-    -- Level 60 count
-    local level60Count = 0
-    for _, m in ipairs(rosterData or {}) do
-        if m and m.level == 60 then
-            level60Count = level60Count + 1
+    -- Level 60 Class distribution - Bar Graph
+    -- Clear existing bars
+    if gf.class60Bars then
+        for _, bar in ipairs(gf.class60Bars) do
+            bar.frame:Hide()
         end
-    end
-    if gf.level60Value then
-        gf.level60Value:SetText(tostring(level60Count))
+        gf.class60Bars = {}
     end
     
-    -- Zone distribution (online members only)
-    local zoneCounts = {}
+    local counts60 = {}
+    local maxCount60 = 0
     for _, m in ipairs(rosterData or {}) do
-        if m and m.online and m.zone and m.zone ~= "" then
-            zoneCounts[m.zone] = (zoneCounts[m.zone] or 0) + 1
+        if m and m.class and m.level == 60 then
+            counts60[m.class] = (counts60[m.class] or 0) + 1
+            if counts60[m.class] > maxCount60 then
+                maxCount60 = counts60[m.class]
+            end
         end
     end
-    
-    local zoneEntries = {}
-    for zone, count in pairs(zoneCounts) do
-        table.insert(zoneEntries, {zone=zone, count=count})
+
+    local entries60 = {}
+    for cls, c in pairs(counts60) do
+        table.insert(entries60, {cls=cls, c=c})
     end
-    table.sort(zoneEntries, function(a,b)
-        if a.count == b.count then
-            return a.zone < b.zone
+    table.sort(entries60, function(a,b)
+        if a.c == b.c then
+            return a.cls < b.cls
         end
-        return a.count > b.count
+        return a.c > b.c
     end)
+
+    -- Create level 60 bars
+    local barHeight60 = 12
+    local barGap60 = 2
+    local maxBarWidth60 = 180
+    local yOffset60 = 0
     
-    local zoneLines = {}
-    local maxZones = 5
-    for i, e in ipairs(zoneEntries) do
-        if i > maxZones then break end
-        table.insert(zoneLines, string.format("%s: %d", e.zone, e.count))
-    end
-    local zoneText = table.concat(zoneLines, "\n")
-    if zoneText == "" then
-        zoneText = "No members online"
-    end
-    
-    if gf.zonesValue then
-        gf.zonesValue:SetText(zoneText)
+    for i, e in ipairs(entries60) do
+        if i > 10 then break end -- Limit to top 10 classes
+        
+        local barFrame = CreateFrame("Frame", nil, gf.class60BarsContainer)
+        barFrame:SetPoint("TOPLEFT", gf.class60BarsContainer, "TOPLEFT", 0, yOffset60)
+        barFrame:SetHeight(barHeight60)
+        
+        -- Calculate bar width based on count
+        local barWidth = maxCount60 > 0 and (e.c / maxCount60) * maxBarWidth60 or 0
+        barFrame:SetWidth(barWidth)
+        
+        -- Bar background with class color
+        local color = CLASS_COLORS[e.cls] or {r=0.5, g=0.5, b=0.5}
+        local barBg = barFrame:CreateTexture(nil, "BACKGROUND")
+        barBg:SetAllPoints(barFrame)
+        barBg:SetTexture("Interface\\TargetingFrame\\UI-StatusBar")
+        barBg:SetVertexColor(color.r, color.g, color.b, 0.8)
+        
+        -- Label (class name and count)
+        local label = barFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        label:SetPoint("LEFT", barFrame, "LEFT", 3, 0)
+        label:SetText(string.format("%s: %d", e.cls, e.c))
+        label:SetTextColor(1, 1, 1)
+        
+        table.insert(gf.class60Bars, {frame=barFrame, bg=barBg, label=label})
+        
+        yOffset60 = yOffset60 - (barHeight60 + barGap60)
     end
     
     -- Officers Online (uses OFFICER_RANK_THRESHOLD configuration)
@@ -2437,6 +2462,144 @@ function IGW:UpdateCraftersPage()
     end
 end
 
+-- Update Page 4 - Suggested Dungeons
+function IGW:UpdateDungeonsPage()
+    local gf = IGW.infoFrame
+    if not gf or not gf.dungeonsContent then return end
+    
+    local content = gf.dungeonsContent
+    
+    -- Clear existing dungeon entries
+    local children = {content:GetChildren()}
+    for _, child in ipairs(children) do
+        child:Hide()
+    end
+    
+    -- Get online members' levels
+    local onlineLevels = {}
+    for _, m in ipairs(rosterData or {}) do
+        if m and m.online and m.level then
+            table.insert(onlineLevels, m.level)
+        end
+    end
+    
+    if table.getn(onlineLevels) == 0 then
+        local noData = content:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        noData:SetPoint("TOP", content, "TOP", 0, -20)
+        noData:SetWidth(210)
+        noData:SetJustifyH("CENTER")
+        noData:SetText("No members online")
+        noData:SetTextColor(0.7, 0.7, 0.7)
+        return
+    end
+    
+    -- Calculate average level of online members
+    local totalLevel = 0
+    for _, lvl in ipairs(onlineLevels) do
+        totalLevel = totalLevel + lvl
+    end
+    local avgLevel = totalLevel / table.getn(onlineLevels)
+    
+    -- Dungeon database with level ranges (Turtle WoW)
+    local dungeons = {
+        {name = "Ragefire Chasm", minLevel = 13, maxLevel = 18},
+        {name = "The Deadmines", minLevel = 17, maxLevel = 24},
+        {name = "Wailing Caverns", minLevel = 17, maxLevel = 24},
+        {name = "Stockades", minLevel = 22, maxLevel = 30},
+        {name = "Blackfathom Deeps", minLevel = 22, maxLevel = 31},
+        {name = "Dragonmaw Retreat", minLevel = 25, maxLevel = 34},
+        {name = "SM-Graveyard", minLevel = 27, maxLevel = 36},
+        {name = "Gnomeregan", minLevel = 29, maxLevel = 38},
+        {name = "Crescent Grove", minLevel = 32, maxLevel = 38},
+        {name = "SM-Library", minLevel = 32, maxLevel = 39},
+        {name = "Razorfen Kraul", minLevel = 32, maxLevel = 42},
+        {name = "Stormwrought Ruins", minLevel = 35, maxLevel = 41},
+        {name = "SM-Armory", minLevel = 40, maxLevel = 45},
+        {name = "SM-Cathedral", minLevel = 40, maxLevel = 45},
+        {name = "Uldaman", minLevel = 40, maxLevel = 51},
+        {name = "Razorfen Downs", minLevel = 42, maxLevel = 44},
+        {name = "Gilneas City", minLevel = 43, maxLevel = 49},
+        {name = "Maraudon", minLevel = 45, maxLevel = 55},
+        {name = "Zul'Farrak", minLevel = 46, maxLevel = 56},
+        {name = "Sunken Temple", minLevel = 50, maxLevel = 60},
+        {name = "Blackrock Depths", minLevel = 52, maxLevel = 60},
+        {name = "Hateforge Quarry", minLevel = 52, maxLevel = 60},
+        {name = "Dire Maul West", minLevel = 55, maxLevel = 60},
+        {name = "Dire Maul East", minLevel = 55, maxLevel = 60},
+        {name = "LBRS", minLevel = 55, maxLevel = 60},
+        {name = "Dire Maul North", minLevel = 58, maxLevel = 60},
+        {name = "Scholomance", minLevel = 58, maxLevel = 60},
+        {name = "Stratholme", minLevel = 58, maxLevel = 60},
+        {name = "UBRS", minLevel = 55, maxLevel = 60},
+        {name = "Stormwind Vault", minLevel = 60, maxLevel = 60},
+        {name = "Karazhan Crypt", minLevel = 60, maxLevel = 60}
+    }
+    
+    -- Score each dungeon based on how well it fits the online levels
+    for _, dungeon in ipairs(dungeons) do
+        local score = 0
+        for _, lvl in ipairs(onlineLevels) do
+            if lvl >= dungeon.minLevel and lvl <= dungeon.maxLevel then
+                score = score + 1
+            end
+        end
+        dungeon.score = score
+        dungeon.coverage = table.getn(onlineLevels) > 0 and (score / table.getn(onlineLevels)) or 0
+    end
+    
+    -- Sort by minimum level ascending
+    table.sort(dungeons, function(a, b)
+        return a.minLevel < b.minLevel
+    end)
+    
+    -- Display up to 22 dungeons with at least 4 players
+    local yOffset = -10
+    local displayed = 0
+    
+    -- Get current player's level
+    local playerLevel = UnitLevel("player")
+    
+    for i, dungeon in ipairs(dungeons) do
+        if displayed >= 22 then break end
+        if dungeon.score >= 4 then  -- Only show dungeons with at least 4 matching members
+            local dungeonEntry = content:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            dungeonEntry:SetPoint("TOP", content, "TOP", 0, yOffset)
+            dungeonEntry:SetWidth(210)
+            dungeonEntry:SetJustifyH("LEFT")
+            
+            -- Color based on player level vs dungeon range
+            local colorCode = "|cFFFFFFFF"  -- White (default)
+            if playerLevel >= dungeon.minLevel and playerLevel <= dungeon.maxLevel then
+                colorCode = "|cFF00FF00"  -- Green (perfect fit)
+            elseif playerLevel >= dungeon.minLevel - 3 and playerLevel <= dungeon.maxLevel + 3 then
+                colorCode = "|cFFFFFF00"  -- Yellow (close fit)
+            elseif playerLevel < dungeon.minLevel then
+                colorCode = "|cFFFF4040"  -- Red (too low)
+            else
+                colorCode = "|cFF808080"  -- Gray (too high)
+            end
+            
+            -- Format player count text
+            local playerText = dungeon.score == 1 and "1 Player" or string.format("%d Players", dungeon.score)
+            
+            dungeonEntry:SetText(string.format("%s%s|r (%d-%d) - |cFF888888%s|r", 
+                colorCode, dungeon.name, dungeon.minLevel, dungeon.maxLevel, playerText))
+            
+            yOffset = yOffset - 16
+            displayed = displayed + 1
+        end
+    end
+    
+    if displayed == 0 then
+        local noSuggestions = content:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        noSuggestions:SetPoint("TOP", content, "TOP", 0, -20)
+        noSuggestions:SetWidth(210)
+        noSuggestions:SetJustifyH("CENTER")
+        noSuggestions:SetText("No suitable dungeons found")
+        noSuggestions:SetTextColor(0.7, 0.7, 0.7)
+    end
+end
+
 
 
 -- Toggle Guild Info window (left-side companion window; empty for now)
@@ -2577,15 +2740,16 @@ content2:Hide()
 gf.content2 = content2
 
 -- Page 2 - Class Distribution
-local classLabel = content2:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+local classLabel = content2:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 classLabel:SetPoint("TOP", content2, "TOP", 0, 0)
 classLabel:SetJustifyH("CENTER")
 classLabel:SetText("Class Distribution")
+classLabel:SetTextColor(1, 1, 1)
 gf.classLabel = classLabel
 
 -- Container for class bars (reduced height)
 local classBarsContainer = CreateFrame("Frame", nil, content2)
-classBarsContainer:SetPoint("TOP", classLabel, "BOTTOM", 0, -8)
+classBarsContainer:SetPoint("TOP", classLabel, "BOTTOM", 0, -4)
 classBarsContainer:SetWidth(210)
 classBarsContainer:SetHeight(120)
 gf.classBarsContainer = classBarsContainer
@@ -2593,60 +2757,44 @@ gf.classBarsContainer = classBarsContainer
 -- Store bars for updating
 gf.classBars = {}
 
--- Divider
+-- Divider before Level 60 Class Distribution
 local page2Div1 = content2:CreateTexture(nil, "ARTWORK")
 page2Div1:SetTexture("Interface\\DialogFrame\\UI-DialogBox-Divider")
 page2Div1:SetPoint("TOP", classBarsContainer, "BOTTOM", 36, -8)
 page2Div1:SetWidth(300)
 page2Div1:SetHeight(16)
 
--- Level 60s Count
-local level60Label = content2:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-level60Label:SetPoint("TOP", page2Div1, "BOTTOM", -36, -8)
-level60Label:SetJustifyH("CENTER")
-level60Label:SetText("Level 60 Characters")
-gf.level60Label = level60Label
+-- Level 60 Class Distribution
+local class60Label = content2:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+class60Label:SetPoint("TOP", page2Div1, "BOTTOM", -36, -4)
+class60Label:SetJustifyH("CENTER")
+class60Label:SetText("Level 60 Class Distribution")
+class60Label:SetTextColor(1, 1, 1)
+gf.class60Label = class60Label
 
-local level60Value = content2:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-level60Value:SetPoint("TOP", level60Label, "BOTTOM", 0, -4)
-level60Value:SetWidth(210)
-level60Value:SetJustifyH("CENTER")
-level60Value:SetText("—")
-gf.level60Value = level60Value
+-- Container for level 60 class bars
+local class60BarsContainer = CreateFrame("Frame", nil, content2)
+class60BarsContainer:SetPoint("TOP", class60Label, "BOTTOM", 0, -4)
+class60BarsContainer:SetWidth(210)
+class60BarsContainer:SetHeight(120)
+gf.class60BarsContainer = class60BarsContainer
 
--- Divider
+-- Store bars for updating
+gf.class60Bars = {}
+
+-- Divider before Officers
 local page2Div2 = content2:CreateTexture(nil, "ARTWORK")
 page2Div2:SetTexture("Interface\\DialogFrame\\UI-DialogBox-Divider")
-page2Div2:SetPoint("TOP", level60Value, "BOTTOM", 36, -8)
+page2Div2:SetPoint("TOP", class60BarsContainer, "BOTTOM", 36, -8)
 page2Div2:SetWidth(300)
 page2Div2:SetHeight(16)
 
--- Current Zones
-local zonesLabel = content2:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-zonesLabel:SetPoint("TOP", page2Div2, "BOTTOM", -36, -8)
-zonesLabel:SetJustifyH("CENTER")
-zonesLabel:SetText("Current Zones (Online)")
-gf.zonesLabel = zonesLabel
-
-local zonesValue = content2:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-zonesValue:SetPoint("TOP", zonesLabel, "BOTTOM", 0, -4)
-zonesValue:SetWidth(210)
-zonesValue:SetJustifyH("CENTER")
-zonesValue:SetText("—")
-gf.zonesValue = zonesValue
-
--- Divider
-local page2Div3 = content2:CreateTexture(nil, "ARTWORK")
-page2Div3:SetTexture("Interface\\DialogFrame\\UI-DialogBox-Divider")
-page2Div3:SetPoint("TOP", zonesValue, "BOTTOM", 36, -8)
-page2Div3:SetWidth(300)
-page2Div3:SetHeight(16)
-
 -- Officers Online
-local officersLabel = content2:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-officersLabel:SetPoint("TOP", page2Div3, "BOTTOM", -36, -8)
+local officersLabel = content2:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+officersLabel:SetPoint("TOP", page2Div2, "BOTTOM", -36, -4)
 officersLabel:SetJustifyH("CENTER")
 officersLabel:SetText("Officers Online")
+officersLabel:SetTextColor(1, 1, 1)
 gf.officersLabel = officersLabel
 
 local officersValue = content2:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
@@ -2655,6 +2803,7 @@ officersValue:SetWidth(210)
 officersValue:SetJustifyH("CENTER")
 officersValue:SetText("—")
 gf.officersValue = officersValue
+
 
 -- Page 3 content frame (hidden by default)
 local content3 = CreateFrame("Frame", nil, gf)
@@ -2684,6 +2833,36 @@ craftersContent:SetWidth(210)
 craftersContent:SetPoint("BOTTOM", content3, "BOTTOM", 0, 50)
 gf.craftersContent = craftersContent
 
+-- Page 4 content frame (hidden by default)
+local content4 = CreateFrame("Frame", nil, gf)
+content4:SetPoint("TOPLEFT", gf, "TOPLEFT", 20, -50)
+content4:SetPoint("BOTTOMRIGHT", gf, "BOTTOMRIGHT", -20, 50)
+content4:Hide()
+gf.content4 = content4
+
+-- Page 4 - Suggested Dungeons
+local dungeonsTitle = content4:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+dungeonsTitle:SetPoint("TOP", content4, "TOP", 0, 0)
+dungeonsTitle:SetJustifyH("CENTER")
+dungeonsTitle:SetText("Suggested Dungeons")
+dungeonsTitle:SetTextColor(1, 1, 1)
+gf.dungeonsTitle = dungeonsTitle
+
+local dungeonsInstruction = content4:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+dungeonsInstruction:SetPoint("TOP", dungeonsTitle, "BOTTOM", 0, -4)
+dungeonsInstruction:SetWidth(210)
+dungeonsInstruction:SetJustifyH("CENTER")
+dungeonsInstruction:SetText("Based on online guild members' levels")
+dungeonsInstruction:SetTextColor(0.8, 0.8, 0.8)
+gf.dungeonsInstruction = dungeonsInstruction
+
+-- Container for dungeons (no scroll, shows all matching)
+local dungeonsContent = CreateFrame("Frame", nil, content4)
+dungeonsContent:SetPoint("TOPLEFT", dungeonsInstruction, "BOTTOMLEFT", 0, -8)
+dungeonsContent:SetPoint("TOPRIGHT", dungeonsInstruction, "BOTTOMRIGHT", 0, -8)
+dungeonsContent:SetPoint("BOTTOM", content4, "BOTTOM", 0, 50)
+gf.dungeonsContent = dungeonsContent
+
 -- Pagination buttons at bottom (match tab button styling)
 local buttonHeight = 25  -- Match tab button height
 local prevBtn = CreateFrame("Button", nil, gf, "UIPanelButtonTemplate")
@@ -2697,13 +2876,23 @@ prevBtn:SetScript("OnClick", function()
         gf.content:Show()
         gf.content2:Hide()
         gf.content3:Hide()
-        gf.pageIndicator:SetText("Page 1 / 3")
+        gf.content4:Hide()
+        gf.pageIndicator:SetText("Page 1 / 4")
     elseif gf.currentPage == 3 then
         gf.currentPage = 2
         gf.content:Hide()
         gf.content2:Show()
         gf.content3:Hide()
-        gf.pageIndicator:SetText("Page 2 / 3")
+        gf.content4:Hide()
+        gf.pageIndicator:SetText("Page 2 / 4")
+    elseif gf.currentPage == 4 then
+        gf.currentPage = 3
+        gf.content:Hide()
+        gf.content2:Hide()
+        gf.content3:Show()
+        gf.content4:Hide()
+        IGW:UpdateCraftersPage()
+        gf.pageIndicator:SetText("Page 3 / 4")
     end
 end)
 gf.prevBtn = prevBtn
@@ -2719,14 +2908,24 @@ nextBtn:SetScript("OnClick", function()
         gf.content:Hide()
         gf.content2:Show()
         gf.content3:Hide()
-        gf.pageIndicator:SetText("Page 2 / 3")
+        gf.content4:Hide()
+        gf.pageIndicator:SetText("Page 2 / 4")
     elseif gf.currentPage == 2 then
         gf.currentPage = 3
         gf.content:Hide()
         gf.content2:Hide()
         gf.content3:Show()
+        gf.content4:Hide()
         IGW:UpdateCraftersPage()
-        gf.pageIndicator:SetText("Page 3 / 3")
+        gf.pageIndicator:SetText("Page 3 / 4")
+    elseif gf.currentPage == 3 then
+        gf.currentPage = 4
+        gf.content:Hide()
+        gf.content2:Hide()
+        gf.content3:Hide()
+        gf.content4:Show()
+        IGW:UpdateDungeonsPage()
+        gf.pageIndicator:SetText("Page 4 / 4")
     end
 end)
 gf.nextBtn = nextBtn
@@ -2734,7 +2933,7 @@ gf.nextBtn = nextBtn
 -- Page indicator (vertically centered with buttons)
 local pageIndicator = gf:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 pageIndicator:SetPoint("BOTTOM", gf, "BOTTOM", 0, 15 + (buttonHeight / 2))
-pageIndicator:SetText("Page 1 / 3")
+pageIndicator:SetText("Page 1 / 4")
 gf.pageIndicator = pageIndicator
 
 -- Initialize to page 1
