@@ -65,7 +65,7 @@ Click any member name to view:
 - Guild information text
 
 **Page 2:**
-- Class distribution bar graph (all levels)
+- Class distribution bar graph (all levels) - smaller white titles, tighter spacing
 - Level 60 class distribution bar graph
 - Online officers list
 
@@ -77,9 +77,11 @@ Click any member name to view:
 **Page 4:**
 - Suggested Dungeons based on online members' levels
 - Shows up to 22 dungeons sorted by minimum level (lowest to highest)
-- Displays how many online players are in range for each dungeon
 - Only shows dungeons with at least 4 online members in range
-- Color-coded by your level: green (in range), yellow (±3 levels), red (too low), gray (too high)
+- Displays player count for each dungeon (e.g., "5 Players")
+- Color-coded by your character's level: green (in range), yellow (±3 levels), red (too low), gray (too high)
+- Includes all 31 Turtle WoW dungeons (Vanilla + custom content)
+- Shortened names: SM-Graveyard, SM-Library, SM-Armory, SM-Cathedral, LBRS, UBRS
 
 ### Sorting & Filtering
 - Click column headers to sort
@@ -152,9 +154,24 @@ Works bidirectionally - view any character to see their alts and main.
 
 ## Version
 
-**2.7** - Latest release
+**2.8** - Latest release
 
 ### Changelog
+
+**2.8**
+- Added Guild Info Page 4: Suggested Dungeons
+  - Shows up to 22 dungeons based on online members' levels
+  - Requires 4+ online members in level range to appear
+  - Color-coded by your character's level (green/yellow/red/gray)
+  - Displays player count for group-forming potential
+  - Includes all 31 Turtle WoW dungeons (vanilla + custom)
+  - Shortened dungeon names (SM-*, LBRS, UBRS) to save space
+- Enhanced Guild Info Page 2
+  - Added Level 60 class distribution bar graph
+  - Smaller white titles with tighter spacing
+  - Removed Level 60 count and zone displays
+- Fixed keybinding error (moved global toggle function to top of file)
+- All side panel pages now use consistent formatting
 
 **2.7**
 - Added "Show offline members by default" option (Member Details tab)

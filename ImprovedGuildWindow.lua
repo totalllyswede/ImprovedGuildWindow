@@ -2,7 +2,7 @@
 -- Author: Travis
 
 local IGW = {}
-IGW.VERSION = "2.7"
+IGW.VERSION = "2.8"
 
 -- Global function for keybind (must be defined early)
 function ImprovedGuildWindow_Toggle()
