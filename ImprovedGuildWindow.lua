@@ -2,7 +2,7 @@
 -- Author: Travis
 
 local IGW = {}
-IGW.VERSION = "2.8"
+IGW.VERSION = "2.9"
 
 -- Global function for keybind (must be defined early)
 function ImprovedGuildWindow_Toggle()
@@ -26,6 +26,53 @@ local currentTab = "details"
 -- Members with rankIndex <= this value are considered "officers"
 -- Default: 2 (includes Guild Master and top 2 officer ranks)
 local OFFICER_RANK_THRESHOLD = 2
+
+-- Timezone lookup table
+local TIMEZONES = {
+    PST = "PST (UTC-8)",
+    PDT = "PDT (UTC-7)",
+    MST = "MST (UTC-7)",
+    MDT = "MDT (UTC-6)",
+    CST = "CST (UTC-6)",
+    CDT = "CDT (UTC-5)",
+    EST = "EST (UTC-5)",
+    EDT = "EDT (UTC-4)",
+    GMT = "GMT (UTC+0)",
+    UTC = "UTC (UTC+0)",
+    CET = "CET (UTC+1)",
+    EET = "EET (UTC+2)",
+    MSK = "MSK (UTC+3)",
+    IST = "IST (UTC+5:30)",
+    JST = "JST (UTC+9)",
+    AEST = "AEST (UTC+10)",
+    NZST = "NZST (UTC+12)"
+}
+
+-- Timezone to region mapping
+local TIMEZONE_REGIONS = {
+    -- Americas
+    PST = "Americas",
+    PDT = "Americas",
+    MST = "Americas",
+    MDT = "Americas",
+    CST = "Americas",
+    CDT = "Americas",
+    EST = "Americas",
+    EDT = "Americas",
+    -- Oceania
+    AEST = "Oceania",
+    NZST = "Oceania",
+    -- Europe
+    GMT = "Europe",
+    UTC = "Europe",
+    CET = "Europe",
+    EET = "Europe",
+    -- Asia
+    MSK = "Asia",
+    IST = "Asia",
+    JST = "Asia"
+}
+
 
 
 
@@ -280,8 +327,8 @@ function IGW:CreateMainFrame()
         if IGW.infoFrame then
             IGW.infoFrame:Hide()
             -- Un-highlight Guild Info button
-            frame.tab3:SetBackdropColor(0.2, 0.2, 0.2, 1)
-            frame.tab3Text:SetTextColor(0.7, 0.7, 0.7)
+            frame.tab4:SetBackdropColor(0.2, 0.2, 0.2, 1)
+            frame.tab4Text:SetTextColor(0.7, 0.7, 0.7)
         end
         -- Close options window
         if IGW.optionsFrame then
@@ -357,18 +404,14 @@ advSearchBtn:SetWidth(120)
 advSearchBtn:SetHeight(22)
 advSearchBtn:SetText("Advanced Search")
 advSearchBtn:SetScript("OnClick", function()
-    if frame.advSearchName:IsVisible() then
-        frame.advSearchName:Hide()
+    if frame.advSearchNote:IsVisible() then
         frame.advSearchNote:Hide()
         frame.advSearchOfficerNote:Hide()
-        frame.advSearchNameLabel:Hide()
         frame.advSearchNoteLabel:Hide()
         frame.advSearchOfficerNoteLabel:Hide()
     else
-        frame.advSearchName:Show()
         frame.advSearchNote:Show()
         frame.advSearchOfficerNote:Show()
-        frame.advSearchNameLabel:Show()
         frame.advSearchNoteLabel:Show()
         frame.advSearchOfficerNoteLabel:Show()
     end
@@ -421,18 +464,13 @@ end
 
 -- Initialize advanced filters table
 frame.advancedFilters = {
-    name = "",
     note = "",
-    officernote = ""
+    officernote = "",
+    region = ""
 }
 
--- Create search boxes
+-- Create search boxes (removed name field)
 local xPos = 130 -- Start after button
-local nameBox, nameLabel = CreateAdvancedSearchBox(filterFrame2, "Name", xPos, "name")
-frame.advSearchName = nameBox
-frame.advSearchNameLabel = nameLabel
-
-xPos = xPos + 40 + filterWidth + filterGap
 
 local noteBox, noteLabel = CreateAdvancedSearchBox(filterFrame2, "Note", xPos, "note")
 frame.advSearchNote = noteBox
@@ -444,8 +482,15 @@ local officerNoteBox, officerNoteLabel = CreateAdvancedSearchBox(filterFrame2, "
 frame.advSearchOfficerNote = officerNoteBox
 frame.advSearchOfficerNoteLabel = officerNoteLabel
 
+xPos = xPos + 80 + filterWidth + filterGap
+
+-- (Region dropdown moved to main filter bar)
+
     
-    -- Search label
+    -- Evenly space 4 filter elements across the filter bar
+    local filterBarWidth = 590  -- Match main window width
+    
+    -- Search label and box (element 1)
     local searchLabel = filterFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     searchLabel:SetPoint("LEFT", filterFrame, "LEFT", 0, 0)
     searchLabel:SetText("Search:")
@@ -453,7 +498,7 @@ frame.advSearchOfficerNoteLabel = officerNoteLabel
     -- Search editbox
     local searchBox = CreateFrame("EditBox", nil, filterFrame)
     searchBox:SetPoint("LEFT", searchLabel, "RIGHT", 5, 0)
-    searchBox:SetWidth(150)
+    searchBox:SetWidth(120)
     searchBox:SetHeight(22)
     searchBox:SetFontObject(GameFontNormal)
     searchBox:SetAutoFocus(false)
@@ -481,9 +526,9 @@ frame.advSearchOfficerNoteLabel = officerNoteLabel
     end)
     frame.searchBox = searchBox
     
-    -- Rank filter label
+    -- Rank filter label (element 2 - positioned at 1/4 mark + 30px)
     local rankLabel = filterFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    rankLabel:SetPoint("LEFT", searchBox, "RIGHT", 20, 0)
+    rankLabel:SetPoint("LEFT", filterFrame, "LEFT", filterBarWidth * 0.25 + 30, 0)
     rankLabel:SetText("Rank:")
     
     -- Rank dropdown
@@ -522,9 +567,78 @@ frame.advSearchOfficerNoteLabel = officerNoteLabel
         end
     end)
     
-    -- Refresh button
-    local refreshBtn = CreateFrame("Button", nil, filterFrame, "UIPanelButtonTemplate")
-    refreshBtn:SetPoint("RIGHT", filterFrame, "RIGHT", -110, 0)
+    -- Region dropdown (element 3 - positioned at 1/2 mark + 40px)
+    local regionLabel = filterFrame:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    regionLabel:SetPoint("LEFT", filterFrame, "LEFT", filterBarWidth * 0.5 + 40, 2)
+    regionLabel:SetText("Region:")
+    
+    local regionDropdown = CreateFrame("Frame", "IGW_RegionDropdown", filterFrame, "UIDropDownMenuTemplate")
+    regionDropdown:SetPoint("LEFT", regionLabel, "RIGHT", -15, -2)
+    UIDropDownMenu_SetWidth(90, regionDropdown)
+    UIDropDownMenu_SetText("All", regionDropdown)
+    frame.regionDropdown = regionDropdown
+    
+    UIDropDownMenu_Initialize(regionDropdown, function()
+        local info = {}
+        
+        -- All option
+        info.text = "All"
+        info.value = ""
+        info.func = function()
+            frame.advancedFilters.region = ""
+            UIDropDownMenu_SetText("All", regionDropdown)
+            IGW:UpdateRosterDisplay()
+        end
+        UIDropDownMenu_AddButton(info)
+        
+        -- Americas
+        info = {}
+        info.text = "Americas"
+        info.value = "Americas"
+        info.func = function()
+            frame.advancedFilters.region = "Americas"
+            UIDropDownMenu_SetText("Americas", regionDropdown)
+            IGW:UpdateRosterDisplay()
+        end
+        UIDropDownMenu_AddButton(info)
+        
+        -- Oceania
+        info = {}
+        info.text = "Oceania"
+        info.value = "Oceania"
+        info.func = function()
+            frame.advancedFilters.region = "Oceania"
+            UIDropDownMenu_SetText("Oceania", regionDropdown)
+            IGW:UpdateRosterDisplay()
+        end
+        UIDropDownMenu_AddButton(info)
+        
+        -- Europe
+        info = {}
+        info.text = "Europe"
+        info.value = "Europe"
+        info.func = function()
+            frame.advancedFilters.region = "Europe"
+            UIDropDownMenu_SetText("Europe", regionDropdown)
+            IGW:UpdateRosterDisplay()
+        end
+        UIDropDownMenu_AddButton(info)
+        
+        -- Asia
+        info = {}
+        info.text = "Asia"
+        info.value = "Asia"
+        info.func = function()
+            frame.advancedFilters.region = "Asia"
+            UIDropDownMenu_SetText("Asia", regionDropdown)
+            IGW:UpdateRosterDisplay()
+        end
+        UIDropDownMenu_AddButton(info)
+    end)
+    
+    -- Refresh button (on advanced search row, aligned right)
+    local refreshBtn = CreateFrame("Button", nil, filterFrame2, "UIPanelButtonTemplate")
+    refreshBtn:SetPoint("RIGHT", filterFrame2, "RIGHT", 0, 0)
     refreshBtn:SetWidth(100)
     refreshBtn:SetHeight(22)
     refreshBtn:SetText("Clear / Refresh")
@@ -536,14 +650,15 @@ frame.advSearchOfficerNoteLabel = officerNoteLabel
         filterText = ""
         
         -- Clear advanced search boxes
-        if frame.advSearchName then
-            frame.advSearchName:SetText("")
-        end
         if frame.advSearchNote then
             frame.advSearchNote:SetText("")
         end
         if frame.advSearchOfficerNote then
             frame.advSearchOfficerNote:SetText("")
+        end
+        if frame.regionDropdown then
+            frame.advancedFilters.region = ""
+            UIDropDownMenu_SetText("All", frame.regionDropdown)
         end
         if frame.advancedFilters then
             frame.advancedFilters.name = ""
@@ -577,15 +692,15 @@ frame.advSearchOfficerNoteLabel = officerNoteLabel
         IGW:UpdateRosterDisplay()
     end)
     
-    -- Show Offline checkbox
+    -- Show Offline checkbox (element 4 - positioned at 3/4 mark + 65px, aligned with search text)
     local offlineCheck = CreateFrame("CheckButton", "IGW_OfflineCheck", filterFrame, "UICheckButtonTemplate")
-    offlineCheck:SetPoint("RIGHT", filterFrame, "RIGHT", -10, 0)
+    offlineCheck:SetPoint("LEFT", filterFrame, "LEFT", filterBarWidth * 0.75 + 65, 0)
     offlineCheck:SetWidth(24)
     offlineCheck:SetHeight(24)
     offlineCheck:SetChecked(showOffline)
     
     local offlineLabel = offlineCheck:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-    offlineLabel:SetPoint("RIGHT", offlineCheck, "LEFT", 0, 0)
+    offlineLabel:SetPoint("LEFT", offlineCheck, "RIGHT", 0, 0)
     offlineLabel:SetText("Show Offline")
     
     offlineCheck:SetScript("OnClick", function()
@@ -716,17 +831,46 @@ end
 function IGW:CreateTabs()
     local tabHeight = 25
     
-    -- Main tabs (Guild Members and Member Details) - centered
+    -- All 4 tabs evenly distributed across bottom
     local tabWidth = 120
     local tabGap = 10
     
-    -- Calculate center position for main tabs only (tab1 and tab2)
-    local totalMainTabWidth = (tabWidth * 2) + tabGap
-    local startX = -(totalMainTabWidth / 2) + (tabWidth / 2)
+    -- Calculate positions for 4 evenly spaced tabs
+    local windowWidth = 620  -- Main window width
+    local totalTabWidth = (tabWidth * 4)
+    local totalGapSpace = windowWidth - totalTabWidth
+    local gapSize = totalGapSpace / 5  -- 5 gaps: left, between tabs (3), right
+    
+    -- Tab 4: Guild Info (far left, evenly spaced)
+    local tab4 = CreateFrame("Button", nil, frame)
+    tab4:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", gapSize, 15)
+    tab4:SetWidth(tabWidth)
+    tab4:SetHeight(tabHeight)
+    tab4:SetFrameLevel(frame:GetFrameLevel() + 1)
+
+    tab4:SetBackdrop({
+        bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        tile = true,
+        tileSize = 16,
+        edgeSize = 16,
+        insets = { left = 3, right = 3, top = 3, bottom = 3 }
+    })
+    tab4:SetBackdropColor(0.2, 0.2, 0.2, 1)
+    tab4:SetBackdropBorderColor(0.5, 0.5, 0.5, 1)
+
+    local tab4Text = tab4:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    tab4Text:SetPoint("CENTER", tab4, "CENTER", 0, 0)
+    tab4Text:SetText("|cFFFF0000<|r Guild Info")  -- Red left arrow before text
+    tab4Text:SetTextColor(0.7, 0.7, 0.7)
+
+    tab4:SetScript("OnClick", function()
+        IGW:ToggleGuildInfoWindow()
+    end)
     
     -- Tab 1: Guild Members
     local tab1 = CreateFrame("Button", nil, frame)
-    tab1:SetPoint("BOTTOM", frame, "BOTTOM", startX, 15)
+    tab1:SetPoint("LEFT", tab4, "RIGHT", gapSize, 0)
     tab1:SetWidth(tabWidth)
     tab1:SetHeight(tabHeight)
     tab1:SetFrameLevel(frame:GetFrameLevel() + 1)
@@ -751,9 +895,9 @@ function IGW:CreateTabs()
         IGW:SwitchTab("details")
     end)
     
-    -- Tab 2: Member Details
+    -- Tab 2: Notes & Rank
     local tab2 = CreateFrame("Button", nil, frame)
-    tab2:SetPoint("LEFT", tab1, "RIGHT", tabGap, 0)
+    tab2:SetPoint("LEFT", tab1, "RIGHT", gapSize, 0)
     tab2:SetWidth(tabWidth)
     tab2:SetHeight(tabHeight)
     tab2:SetFrameLevel(frame:GetFrameLevel() + 1)
@@ -772,19 +916,20 @@ function IGW:CreateTabs()
     
     local tab2Text = tab2:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     tab2Text:SetPoint("CENTER", tab2, "CENTER", 0, 0)
-    tab2Text:SetText("Member Details")
+    tab2Text:SetText("Notes & Rank")
     
     tab2:SetScript("OnClick", function()
         IGW:SwitchTab("roster")
     end)
     
-    -- Tab 3: Guild Info (far left of window)
+    -- Tab 3: Detailed View
     local tab3 = CreateFrame("Button", nil, frame)
-    tab3:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 15, 15)
+    tab3:SetPoint("LEFT", tab2, "RIGHT", gapSize, 0)
     tab3:SetWidth(tabWidth)
     tab3:SetHeight(tabHeight)
     tab3:SetFrameLevel(frame:GetFrameLevel() + 1)
-
+    
+    -- Background for tab
     tab3:SetBackdrop({
         bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
         edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
@@ -795,22 +940,23 @@ function IGW:CreateTabs()
     })
     tab3:SetBackdropColor(0.2, 0.2, 0.2, 1)
     tab3:SetBackdropBorderColor(0.5, 0.5, 0.5, 1)
-
+    
     local tab3Text = tab3:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     tab3Text:SetPoint("CENTER", tab3, "CENTER", 0, 0)
-    tab3Text:SetText("|cFFFF0000<|r Guild Info")  -- Red left arrow before text
-    tab3Text:SetTextColor(0.7, 0.7, 0.7)
-
+    tab3Text:SetText("Detailed View")
+    
     tab3:SetScript("OnClick", function()
-        IGW:ToggleGuildInfoWindow()
+        IGW:SwitchTab("detailed")
     end)
 
     frame.tab1 = tab1
     frame.tab2 = tab2
+    frame.tab3 = tab3
     frame.tab1Text = tab1Text
     frame.tab2Text = tab2Text
-    frame.tab3 = tab3
     frame.tab3Text = tab3Text
+    frame.tab4 = tab4
+    frame.tab4Text = tab4Text
 
     -- Switch to Calendar button (bottom right)
     local calBtn = CreateFrame("Button", nil, frame)
@@ -872,8 +1018,10 @@ function IGW:SwitchTab(tabName)
         -- Activate Guild Members tab (tab1)
         frame.tab1:SetBackdropColor(0.5, 0.5, 0.5, 1)
         frame.tab2:SetBackdropColor(0.2, 0.2, 0.2, 1)
+        frame.tab3:SetBackdropColor(0.2, 0.2, 0.2, 1)
         frame.tab1Text:SetTextColor(1, 1, 1)
         frame.tab2Text:SetTextColor(0.7, 0.7, 0.7)
+        frame.tab3Text:SetTextColor(0.7, 0.7, 0.7)
         
         -- Set default sorting (only if not remembering)
         if not ImprovedGuildWindowDB or ImprovedGuildWindowDB.rememberSorting == false then
@@ -889,12 +1037,14 @@ function IGW:SwitchTab(tabName)
         
         -- Show details columns
         IGW:UpdateColumnHeaders("details")
-    else
-        -- Activate Member Details tab (tab2)
+    elseif tabName == "roster" then
+        -- Activate Notes & Rank tab (tab2)
         frame.tab1:SetBackdropColor(0.2, 0.2, 0.2, 1)
         frame.tab2:SetBackdropColor(0.5, 0.5, 0.5, 1)
+        frame.tab3:SetBackdropColor(0.2, 0.2, 0.2, 1)
         frame.tab1Text:SetTextColor(0.7, 0.7, 0.7)
         frame.tab2Text:SetTextColor(1, 1, 1)
+        frame.tab3Text:SetTextColor(0.7, 0.7, 0.7)
         
         -- Set default sorting (only if not remembering)
         if not ImprovedGuildWindowDB or ImprovedGuildWindowDB.rememberSorting == false then
@@ -910,6 +1060,40 @@ function IGW:SwitchTab(tabName)
         
         -- Show roster columns
         IGW:UpdateColumnHeaders("roster")
+    elseif tabName == "detailed" then
+        -- Activate Detailed View tab (tab3)
+        frame.tab1:SetBackdropColor(0.2, 0.2, 0.2, 1)
+        frame.tab2:SetBackdropColor(0.2, 0.2, 0.2, 1)
+        frame.tab3:SetBackdropColor(0.5, 0.5, 0.5, 1)
+        frame.tab1Text:SetTextColor(0.7, 0.7, 0.7)
+        frame.tab2Text:SetTextColor(0.7, 0.7, 0.7)
+        frame.tab3Text:SetTextColor(1, 1, 1)
+        
+        -- Set default sorting (only if not remembering)
+        if not ImprovedGuildWindowDB or ImprovedGuildWindowDB.rememberSorting == false then
+            sortColumn = "name"
+            sortAscending = true
+        end
+        
+        -- Show all members including offline
+        showOffline = true
+        if frame.offlineCheck then
+            frame.offlineCheck:SetChecked(true)
+        end
+        
+        -- Show detailed view columns
+        IGW:UpdateColumnHeaders("detailed")
+    end
+    
+    -- Update header arrows to show current sort state
+    if frame.headerButtons then
+        for _, btn in ipairs(frame.headerButtons) do
+            if btn.column == sortColumn then
+                btn.arrow:SetText(sortAscending and "^" or "v")
+            else
+                btn.arrow:SetText("")
+            end
+        end
     end
     
     IGW:UpdateRosterDisplay()
@@ -936,6 +1120,14 @@ headers = {
     {text = "Officer Note", width = 140, column = "officernote"}, -- narrowed
     {text = "Last Online",  width = 80,  column = "lastonline"}
 }
+    elseif tabName == "detailed" then
+        headers = {
+            {text = "Name", width = 140, column = "name"},
+            {text = "Level", width = 60, column = "level"},
+            {text = "Rank", width = 120, column = "rank"},
+            {text = "Date Joined", width = 110, column = "datejoined"},
+            {text = "Time Zone", width = 190, column = "timezone"}
+        }
     else
         headers = {
             {text = "Name", width = 110, column = "name"},
@@ -1047,6 +1239,33 @@ function IGW:ApplyRowLayout(tabName, headers)
             row.officerNote:ClearAllPoints()
             row.officerNote:SetPoint("LEFT", row, "LEFT", colX["lastonline"] + 5, 0)
             row.officerNote:SetWidth(colW["lastonline"] - 10)
+        elseif tabName == "detailed" then
+            -- Detailed View tab uses: name, level, (rank -> row.class), (datejoined -> row.rank),
+            -- (timezone -> row.note)
+            row.name:ClearAllPoints()
+            row.name:SetPoint("LEFT", row, "LEFT", colX["name"] + 5, 0)
+            row.name:SetWidth(colW["name"] - 10)
+
+            row.level:ClearAllPoints()
+            row.level:SetPoint("LEFT", row, "LEFT", colX["level"] + 5, 0)
+            row.level:SetWidth(colW["level"] - 10)
+
+            row.class:ClearAllPoints()
+            row.class:SetPoint("LEFT", row, "LEFT", colX["rank"] + 5, 0)
+            row.class:SetWidth(colW["rank"] - 10)
+
+            row.rank:ClearAllPoints()
+            row.rank:SetPoint("LEFT", row, "LEFT", colX["datejoined"] + 5, 0)
+            row.rank:SetWidth(colW["datejoined"] - 10)
+
+            row.note:ClearAllPoints()
+            row.note:SetPoint("LEFT", row, "LEFT", colX["timezone"] + 5, 0)
+            row.note:SetWidth(colW["timezone"] - 10)
+
+            -- Not used in this view
+            row.officerNote:SetText("")
+            row.race:SetText("")
+            row.faction:SetText("")
         else
             -- Guild Members tab uses: name, level, class, race, faction, (location -> row.rank), (rank -> row.note)
             row.name:ClearAllPoints()
@@ -1183,7 +1402,7 @@ function IGW:ShowMemberDetails(index)
         nameValue:SetText("")
         df.nameValue = nameValue
         
-        yOffset = yOffset - 25
+        yOffset = yOffset - 20
         
         -- Level & Class
         local levelLabel = df:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -1200,7 +1419,7 @@ function IGW:ShowMemberDetails(index)
         classValue:SetText("")
         df.classValue = classValue
         
-        yOffset = yOffset - 25
+        yOffset = yOffset - 20
         
         -- Rank
         local rankLabel = df:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -1212,7 +1431,7 @@ function IGW:ShowMemberDetails(index)
         rankValue:SetText("")
         df.rankValue = rankValue
         
-        yOffset = yOffset - 25
+        yOffset = yOffset - 20
         
         -- Zone
         local zoneLabel = df:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -1226,7 +1445,7 @@ function IGW:ShowMemberDetails(index)
         zoneValue:SetText("")
         df.zoneValue = zoneValue
         
-        yOffset = yOffset - 25
+        yOffset = yOffset - 20
         
         -- Online status
         local onlineLabel = df:CreateFontString(nil, "OVERLAY", "GameFontNormal")
@@ -1237,6 +1456,30 @@ function IGW:ShowMemberDetails(index)
         onlineValue:SetPoint("LEFT", onlineLabel, "RIGHT", 10, 0)
         onlineValue:SetText("")
         df.onlineValue = onlineValue
+        
+        yOffset = yOffset - 20
+        
+        -- Date Joined
+        local dateJoinedLabel = df:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        dateJoinedLabel:SetPoint("TOPLEFT", df, "TOPLEFT", leftX, yOffset)
+        dateJoinedLabel:SetText("Date Joined:")
+        
+        local dateJoinedValue = df:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+        dateJoinedValue:SetPoint("LEFT", dateJoinedLabel, "RIGHT", 10, 0)
+        dateJoinedValue:SetText("")
+        df.dateJoinedValue = dateJoinedValue
+        
+        yOffset = yOffset - 20
+        
+        -- Time Zone
+        local timeZoneLabel = df:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        timeZoneLabel:SetPoint("TOPLEFT", df, "TOPLEFT", leftX, yOffset)
+        timeZoneLabel:SetText("Time Zone:")
+        
+        local timeZoneValue = df:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+        timeZoneValue:SetPoint("LEFT", timeZoneLabel, "RIGHT", 10, 0)
+        timeZoneValue:SetText("")
+        df.timeZoneValue = timeZoneValue
         
         -- Faction icon (top right, above divider)
         local factionIcon = df:CreateTexture(nil, "ARTWORK")
@@ -1448,6 +1691,39 @@ yOffset = yOffset - (buttonHeight + buttonYGap)
         df.onlineValue:SetTextColor(0.5, 0.5, 0.5)
         df.onlineValue:SetText("Offline")
     end
+    
+    -- Date Joined and Time Zone (extract from officer note)
+    -- Format: RaceCode-MMDDYYTTT or just MMDDYYTTT (if no race code)
+    -- Example: O-030125PST or 030125PST or O-030125 (no timezone)
+    local dateJoined = "—"
+    local timeZone = "—"
+    local officerNote = member.officernote or ""
+    
+    -- First try to find 6 digits + 3 letters (date with timezone)
+    local _, _, dateStr, tzStr = string.find(officerNote, "(%d%d%d%d%d%d)(%a%a%a)")
+    
+    -- If no timezone found, just try to find 6 digits (date only)
+    if not dateStr then
+        _, _, dateStr = string.find(officerNote, "(%d%d%d%d%d%d)")
+    end
+    
+    if dateStr then
+        -- Parse MMDDYY
+        local month = string.sub(dateStr, 1, 2)
+        local day = string.sub(dateStr, 3, 4)
+        local year = string.sub(dateStr, 5, 6)
+        
+        -- Format as MM/DD/YY
+        dateJoined = month .. "/" .. day .. "/" .. year
+        
+        -- Look up timezone full name if we have one
+        if tzStr then
+            timeZone = TIMEZONES[tzStr] or tzStr
+        end
+    end
+    
+    df.dateJoinedValue:SetText(dateJoined)
+    df.timeZoneValue:SetText(timeZone)
     
     -- Faction icon
     local faction = IGW_GetFaction(race)
@@ -1706,13 +1982,6 @@ function IGW:UpdateRosterDisplay()
         
         -- Advanced filters (individual column searches)
         if show and frame.advancedFilters then
-            if frame.advancedFilters.name ~= "" then
-                local nameSearch = string.lower(member.name or "")
-                if not string.find(nameSearch, frame.advancedFilters.name, 1, true) then
-                    show = false
-                end
-            end
-            
             if show and frame.advancedFilters.note ~= "" then
                 local noteSearch = string.lower(member.note or "")
                 if not string.find(noteSearch, frame.advancedFilters.note, 1, true) then
@@ -1723,6 +1992,16 @@ function IGW:UpdateRosterDisplay()
             if show and frame.advancedFilters.officernote ~= "" then
                 local officerNoteSearch = string.lower(member.officernote or "")
                 if not string.find(officerNoteSearch, frame.advancedFilters.officernote, 1, true) then
+                    show = false
+                end
+            end
+            
+            -- Region filter (based on timezone)
+            if show and frame.advancedFilters.region ~= "" then
+                local officerNote = member.officernote or ""
+                local _, _, tzStr = string.find(officerNote, "%d%d%d%d%d%d(%a%a%a)")
+                local memberRegion = tzStr and TIMEZONE_REGIONS[tzStr] or nil
+                if memberRegion ~= frame.advancedFilters.region then
                     show = false
                 end
             end
@@ -1811,6 +2090,33 @@ function IGW:UpdateRosterDisplay()
             local bFaction = IGW_GetFaction(bRace)
             aVal = aFaction
             bVal = bFaction
+        elseif sortColumn == "datejoined" then
+            -- Extract date from officer note (MMDDYY format)
+            local _, _, aDateStr = string.find(a.data.officernote or "", "(%d%d%d%d%d%d)")
+            local _, _, bDateStr = string.find(b.data.officernote or "", "(%d%d%d%d%d%d)")
+            -- Convert MMDDYY to YYMMDD for proper sorting (newest first when descending)
+            if aDateStr then
+                local aMonth = string.sub(aDateStr, 1, 2)
+                local aDay = string.sub(aDateStr, 3, 4)
+                local aYear = string.sub(aDateStr, 5, 6)
+                aVal = aYear .. aMonth .. aDay
+            else
+                aVal = "999999"  -- No date = sort to end
+            end
+            if bDateStr then
+                local bMonth = string.sub(bDateStr, 1, 2)
+                local bDay = string.sub(bDateStr, 3, 4)
+                local bYear = string.sub(bDateStr, 5, 6)
+                bVal = bYear .. bMonth .. bDay
+            else
+                bVal = "999999"  -- No date = sort to end
+            end
+        elseif sortColumn == "timezone" then
+            -- Extract timezone from officer note
+            local _, _, aTzStr = string.find(a.data.officernote or "", "%d%d%d%d%d%d(%a%a%a)")
+            local _, _, bTzStr = string.find(b.data.officernote or "", "%d%d%d%d%d%d(%a%a%a)")
+            aVal = aTzStr or "zzz"  -- No timezone = sort to end
+            bVal = bTzStr or "zzz"
         end
         
         if sortAscending then
@@ -1824,8 +2130,8 @@ function IGW:UpdateRosterDisplay()
     local numDisplayed = table.getn(displayedMembers)
     
     -- Update FauxScrollFrame
-    local rowHeight = (currentTab == "roster") and ROW_HEIGHT_DETAILS or ROW_HEIGHT_DEFAULT
-    local maxRows = (currentTab == "roster") and VISIBLE_ROWS_DETAILS or VISIBLE_ROWS_GUILD
+    local rowHeight = (currentTab == "roster" or currentTab == "detailed") and ROW_HEIGHT_DETAILS or ROW_HEIGHT_DEFAULT
+    local maxRows = (currentTab == "roster" or currentTab == "detailed") and VISIBLE_ROWS_DETAILS or VISIBLE_ROWS_GUILD
     
     -- Ensure we don't have more scroll range than needed
     -- If we have fewer items than visible rows, no scrolling needed
@@ -1851,19 +2157,19 @@ function IGW:UpdateRosterDisplay()
 
 
 
-        local maxRows = (currentTab == "roster") and VISIBLE_ROWS_DETAILS or VISIBLE_ROWS_GUILD
+        local maxRows = (currentTab == "roster" or currentTab == "detailed") and VISIBLE_ROWS_DETAILS or VISIBLE_ROWS_GUILD
         if i > maxRows then
             row:Hide()
         end
-        -- Only show fewer rows on Member Details tab
-        if currentTab == "roster" and i > VISIBLE_ROWS_DETAILS then
+        -- Only show fewer rows on Notes & Rank or Detailed View tabs
+        if (currentTab == "roster" or currentTab == "detailed") and i > VISIBLE_ROWS_DETAILS then
             row:Hide()
         end
         row:SetHeight(rowHeight)
         row:ClearAllPoints()
         row:SetPoint("TOPLEFT", frame, "TOPLEFT", 25, (headerTopY - 30) - (i-1) * rowHeight)
         local dataIndex = offset + i
-        if dataIndex <= numDisplayed and not (currentTab == "roster" and i > VISIBLE_ROWS_DETAILS) then
+        if dataIndex <= numDisplayed and not ((currentTab == "roster" or currentTab == "detailed") and i > VISIBLE_ROWS_DETAILS) then
             local member = displayedMembers[dataIndex].data
             local index = displayedMembers[dataIndex].index
             
@@ -1936,6 +2242,55 @@ function IGW:UpdateRosterDisplay()
                         row.officerNote:SetTextColor(0.5, 0.5, 0.5)  -- Gray
                     end
                 end
+            elseif currentTab == "detailed" then
+                -- Detailed View columns: Name, Level, Rank, Date Joined, Time Zone
+                
+                -- Name (without offline tag)
+                row.name:SetText(member.name or "")
+                if member.online then
+                    row.name:SetTextColor(1, 1, 1)
+                else
+                    row.name:SetTextColor(0.5, 0.5, 0.5)
+                end
+                
+                -- Level
+                row.level:SetText(member.level)
+                row.level:SetTextColor(1, 1, 1)
+                
+                -- Rank (using class field)
+                row.class:SetText(member.rank or "")
+                row.class:SetTextColor(1, 1, 1)
+                
+                -- Parse Date Joined and Time Zone from officer note
+                local dateJoined = "—"
+                local timeZone = "—"
+                local officerNote = member.officernote or ""
+                local _, _, dateStr, tzStr = string.find(officerNote, "(%d%d%d%d%d%d)(%a%a%a)")
+                if not dateStr then
+                    _, _, dateStr = string.find(officerNote, "(%d%d%d%d%d%d)")
+                end
+                if dateStr then
+                    local month = string.sub(dateStr, 1, 2)
+                    local day = string.sub(dateStr, 3, 4)
+                    local year = string.sub(dateStr, 5, 6)
+                    dateJoined = month .. "/" .. day .. "/" .. year
+                    if tzStr then
+                        timeZone = TIMEZONES[tzStr] or tzStr
+                    end
+                end
+                
+                -- Date Joined (using rank field)
+                row.rank:SetText(dateJoined)
+                row.rank:SetTextColor(1, 1, 1)
+                
+                -- Time Zone (using note field)
+                row.note:SetText(timeZone)
+                row.note:SetTextColor(1, 1, 1)
+                
+                -- Hide race and faction fields
+                row.race:SetText("")
+                row.faction:SetText("")
+                row.officerNote:SetText("")
             else
                 -- Guild Members view columns: Name, Level, Class, Location, Rank
                 -- Name
@@ -2945,16 +3300,16 @@ gf.currentPage = 1
     local gf = IGW.infoFrame
     if gf:IsVisible() then
         gf:Hide()
-        -- Un-highlight tab3 button
-        frame.tab3:SetBackdropColor(0.2, 0.2, 0.2, 1)
-        frame.tab3Text:SetTextColor(0.7, 0.7, 0.7)
+        -- Un-highlight tab4 button
+        frame.tab4:SetBackdropColor(0.2, 0.2, 0.2, 1)
+        frame.tab4Text:SetTextColor(0.7, 0.7, 0.7)
     else
         gf:ClearAllPoints()
         gf:SetPoint("TOPRIGHT", frame, "TOPLEFT", -5, 0)
         gf:SetHeight(frame:GetHeight())
-        -- Highlight tab3 button
-        frame.tab3:SetBackdropColor(0.5, 0.5, 0.5, 1)
-        frame.tab3Text:SetTextColor(1, 1, 1)
+        -- Highlight tab4 button
+        frame.tab4:SetBackdropColor(0.5, 0.5, 0.5, 1)
+        frame.tab4Text:SetTextColor(1, 1, 1)
         -- Update texture with saved color and opacity
         if gf.bgTexture then
             local bgColor = {r = 0.15, g = 0.15, b = 0.15}
@@ -3287,11 +3642,15 @@ function IGW:ToggleOptionsWindow()
         
         local memberDetailsLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
         memberDetailsLabel:SetPoint("LEFT", memberDetailsRadio, "RIGHT", 5, 0)
-        memberDetailsLabel:SetText("Member Details (all members)")
+        memberDetailsLabel:SetText("Notes & Rank (all members)")
         
         -- Set initial radio button states
         local defaultTab = (ImprovedGuildWindowDB and ImprovedGuildWindowDB.defaultTab) or "details"
         if defaultTab == "details" then
+            guildMembersRadio:SetChecked(true)
+            memberDetailsRadio:SetChecked(false)
+        elseif defaultTab == "detailed" then
+            -- If set to detailed view, default to guild members for now (no radio option yet)
             guildMembersRadio:SetChecked(true)
             memberDetailsRadio:SetChecked(false)
         else

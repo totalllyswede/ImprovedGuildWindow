@@ -32,10 +32,11 @@ When enabled:
 - Auto-joins guild sync channel on login
 - Broadcasts event changes to all guild members with calendar enabled
 
-### Three View Modes
-- **Guild Members** - Online members only, sorted by rank
-- **Member Details** - All members with Last Online column
-- **Guild Info** - Statistics and guild information (left panel)
+### Four View Modes
+- **Guild Members** - Online members only with location/zone info
+- **Notes & Rank** - All members with public notes, officer notes, and last online
+- **Detailed View** - All members with date joined and timezone information
+- **Guild Info** - Statistics and guild information (side panel)
 
 ### Options Menu
 Click the "Options" button to customize:
@@ -45,9 +46,15 @@ Click the "Options" button to customize:
 - **Allow Moving Side Windows** - Toggle lock/unlock for side panels
 - **Default View** - Set which tab opens by default
 
-### Advanced Search
-Click "Advanced Search" for individual filters:
-- Name, Public Note, and Officer Note search boxes
+### Advanced Search & Filtering
+Main filter bar includes:
+- **Search** - Quick filter by name, class, rank, or notes
+- **Rank** - Filter by guild rank
+- **Region** - Filter by timezone region (Americas, Oceania, Europe, Asia)
+- **Show Offline** - Toggle offline member visibility
+
+Click "Advanced Search" for additional filters:
+- Public Note and Officer Note search boxes
 - All filters work together
 - "Clear / Refresh" button resets and updates roster
 
@@ -154,9 +161,34 @@ Works bidirectionally - view any character to see their alts and main.
 
 ## Version
 
-**2.8** - Latest release
+**2.9** - Latest stable release
 
 ### Changelog
+
+**2.9**
+- Renamed "Member Details" tab to "Notes & Rank"
+- Added new "Detailed View" tab showing: Name, Level, Rank, Date Joined, Time Zone
+  - Date Joined and Time Zone extracted from officer note format (MMDDYYTTT)
+  - Timezone displays as "PST (UTC-8)" format
+  - Defaults to sorting by name ascending
+  - Shows all members (online and offline)
+- Added Region filter dropdown to main filter bar
+  - Filter options: All, Americas, Oceania, Europe, Asia
+  - Maps timezones to regions automatically
+  - Always visible (not part of advanced search)
+- Reorganized filter layout
+  - Moved Clear/Refresh button to advanced search row (right edge)
+  - Moved Region dropdown to main filter row (next to Rank)
+  - Evenly spaced 4 elements on filter bar: Search, Rank, Region, Show Offline
+- Reorganized main tabs at bottom
+  - All 4 tabs now evenly distributed across bottom width
+  - Order: Guild Info → Guild Members → Notes & Rank → Detailed View
+  - Consistent spacing between all tabs
+- Removed Name field from Advanced Search (redundant with main search)
+- Fixed timezone/date sorting (prevented nil comparison errors)
+- Fixed spacing in Member Details side panel (all rows now 20px spacing)
+- Remember Sorting option now properly applies to all 3 main tabs
+- Header arrows update when switching tabs to show current sort state
 
 **2.8**
 - Added Guild Info Page 4: Suggested Dungeons
