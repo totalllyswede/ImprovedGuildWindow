@@ -1693,8 +1693,8 @@ yOffset = yOffset - (buttonHeight + buttonYGap)
     end
     
     -- Date Joined and Time Zone (extract from officer note)
-    -- Format: RaceCode-MMDDYYTTT or just MMDDYYTTT (if no race code)
-    -- Example: O-030125PST or 030125PST or O-030125 (no timezone)
+    -- Format: RaceCode-MMDDYYTTT or just MMDDYYTTT (if no race code) or just TT (timezone only)
+    -- Example: O-030125PST or 030125PST or O-030125 (no timezone) or O-PST (just timezone)
     local dateJoined = "—"
     local timeZone = "—"
     local officerNote = member.officernote or ""
@@ -1702,9 +1702,20 @@ yOffset = yOffset - (buttonHeight + buttonYGap)
     -- First try to find 6 digits + 3 letters (date with timezone)
     local _, _, dateStr, tzStr = string.find(officerNote, "(%d%d%d%d%d%d)(%a%a%a)")
     
-    -- If no timezone found, just try to find 6 digits (date only)
+    -- If no timezone found with date, try to find just 6 digits (date only)
     if not dateStr then
         _, _, dateStr = string.find(officerNote, "(%d%d%d%d%d%d)")
+    end
+    
+    -- If still no timezone found, try to find just 3 letters (timezone only)
+    if not tzStr then
+        -- Look for 3 consecutive letters that match a known timezone
+        for tz, _ in pairs(TIMEZONES) do
+            if string.find(officerNote, tz) then
+                tzStr = tz
+                break
+            end
+        end
     end
     
     if dateStr then
@@ -1715,11 +1726,11 @@ yOffset = yOffset - (buttonHeight + buttonYGap)
         
         -- Format as MM/DD/YY
         dateJoined = month .. "/" .. day .. "/" .. year
-        
-        -- Look up timezone full name if we have one
-        if tzStr then
-            timeZone = TIMEZONES[tzStr] or tzStr
-        end
+    end
+    
+    -- Look up timezone full name if we have one
+    if tzStr then
+        timeZone = TIMEZONES[tzStr] or tzStr
     end
     
     df.dateJoinedValue:SetText(dateJoined)
@@ -2091,9 +2102,10 @@ function IGW:UpdateRosterDisplay()
             aVal = aFaction
             bVal = bFaction
         elseif sortColumn == "datejoined" then
-            -- Extract date from officer note (MMDDYY format)
+            -- Extract date directly from officer note (no main fallback)
             local _, _, aDateStr = string.find(a.data.officernote or "", "(%d%d%d%d%d%d)")
             local _, _, bDateStr = string.find(b.data.officernote or "", "(%d%d%d%d%d%d)")
+            
             -- Convert MMDDYY to YYMMDD for proper sorting (newest first when descending)
             if aDateStr then
                 local aMonth = string.sub(aDateStr, 1, 2)
@@ -2112,9 +2124,30 @@ function IGW:UpdateRosterDisplay()
                 bVal = "999999"  -- No date = sort to end
             end
         elseif sortColumn == "timezone" then
-            -- Extract timezone from officer note
+            -- Extract timezone from officer note (can be with or without date)
             local _, _, aTzStr = string.find(a.data.officernote or "", "%d%d%d%d%d%d(%a%a%a)")
             local _, _, bTzStr = string.find(b.data.officernote or "", "%d%d%d%d%d%d(%a%a%a)")
+            
+            -- If not found with date, try standalone timezone
+            if not aTzStr then
+                local aOfficerNote = a.data.officernote or ""
+                for tz, _ in pairs(TIMEZONES) do
+                    if string.find(aOfficerNote, tz) then
+                        aTzStr = tz
+                        break
+                    end
+                end
+            end
+            if not bTzStr then
+                local bOfficerNote = b.data.officernote or ""
+                for tz, _ in pairs(TIMEZONES) do
+                    if string.find(bOfficerNote, tz) then
+                        bTzStr = tz
+                        break
+                    end
+                end
+            end
+            
             aVal = aTzStr or "zzz"  -- No timezone = sort to end
             bVal = bTzStr or "zzz"
         end
@@ -2261,7 +2294,7 @@ function IGW:UpdateRosterDisplay()
                 row.class:SetText(member.rank or "")
                 row.class:SetTextColor(1, 1, 1)
                 
-                -- Parse Date Joined and Time Zone from officer note
+                -- Extract Date Joined and Time Zone from officer note (timezone can be standalone)
                 local dateJoined = "—"
                 local timeZone = "—"
                 local officerNote = member.officernote or ""
@@ -2269,14 +2302,26 @@ function IGW:UpdateRosterDisplay()
                 if not dateStr then
                     _, _, dateStr = string.find(officerNote, "(%d%d%d%d%d%d)")
                 end
+                
+                -- If still no timezone found, try to find just 3 letters (timezone only)
+                if not tzStr then
+                    for tz, _ in pairs(TIMEZONES) do
+                        if string.find(officerNote, tz) then
+                            tzStr = tz
+                            break
+                        end
+                    end
+                end
+                
                 if dateStr then
                     local month = string.sub(dateStr, 1, 2)
                     local day = string.sub(dateStr, 3, 4)
                     local year = string.sub(dateStr, 5, 6)
                     dateJoined = month .. "/" .. day .. "/" .. year
-                    if tzStr then
-                        timeZone = TIMEZONES[tzStr] or tzStr
-                    end
+                end
+                
+                if tzStr then
+                    timeZone = TIMEZONES[tzStr] or tzStr
                 end
                 
                 -- Date Joined (using rank field)

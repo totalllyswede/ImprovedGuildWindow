@@ -149,6 +149,23 @@ Add race code to character **officer notes** for automatic race and faction disp
 
 Race appears in Guild Members tab and Member Details window. Faction icon (Alliance/Horde) appears in Member Details window. If no race code is found, cells remain blank.
 
+### Date Joined & Timezone Format
+Add date and/or timezone to officer notes to populate the Detailed View tab and Member Details panel.
+
+**Format:** `MMDDYYTTT` where MMDDYY is the date and TTT is the 3-letter timezone code.
+
+**Supported formats:**
+- `O-030125PST` = Full format (race, date, timezone)
+- `030125PST` = Date and timezone (no race)
+- `O-PST` = Race and timezone only (no date)
+- `PST` = Timezone only (no race or date)
+- `O-030125` = Race and date only (no timezone)
+
+**Supported timezones:**
+PST, PDT, MST, MDT, CST, CDT, EST, EDT, GMT, UTC, CET, EET, MSK, IST, JST, AEST, NZST
+
+Timezones display as "PST (UTC-8)" format in both Member Details and Detailed View tab.
+
 ### Officer Detection
 Edit `OFFICER_RANK_THRESHOLD` in the .lua file (default: 2)
 - 0 = Guild Master only
@@ -156,7 +173,7 @@ Edit `OFFICER_RANK_THRESHOLD` in the .lua file (default: 2)
 - 2 = Guild Master + top 2 ranks (default)
 
 ### Alt Detection
-Add "Alt of [MainName]" to character public notes for automatic detection.
+Add "Alt of [MainName]" to character **public notes** for automatic detection.
 Works bidirectionally - view any character to see their alts and main.
 
 ## Version
