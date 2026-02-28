@@ -2472,13 +2472,26 @@ function IGW:UpdateGuildInfoWindow()
 
     -- Total members (use rosterData if populated, otherwise query API)
     local total = 0
+    -- Count guild members (excluding alts) and alts separately
+    local totalMembers = 0
+    local totalAlts = 0
     if rosterData and table.getn(rosterData) > 0 then
-        total = table.getn(rosterData)
+        for _, member in ipairs(rosterData) do
+            local rank = string.lower(member.rank or "")
+            if string.find(rank, "alt") then
+                totalAlts = totalAlts + 1
+            else
+                totalMembers = totalMembers + 1
+            end
+        end
     else
-        total = GetNumGuildMembers(true) or 0
+        totalMembers = GetNumGuildMembers(true) or 0
     end
     if gf.totalMembersText then
-        gf.totalMembersText:SetText("Total Members: " .. total)
+        gf.totalMembersText:SetText("Guild Members: " .. totalMembers)
+    end
+    if gf.totalAltsText then
+        gf.totalAltsText:SetText("Guild Member Alts: " .. totalAlts)
     end
 
     -- MOTD
@@ -3083,17 +3096,24 @@ guildNameText:SetJustifyH("CENTER")
 guildNameText:SetText("Guild")
 gf.guildNameText = guildNameText
 
--- Total members
+-- Guild Members (excluding alts)
 local totalMembersText = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 totalMembersText:SetPoint("TOP", guildNameText, "BOTTOM", 0, -10)
 totalMembersText:SetJustifyH("CENTER")
-totalMembersText:SetText("Total Members: 0")
+totalMembersText:SetText("Guild Members: 0")
 gf.totalMembersText = totalMembersText
 
--- Divider 1 (after total members)
+-- Guild Member Alts (members with "alt" in rank)
+local totalAltsText = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+totalAltsText:SetPoint("TOP", totalMembersText, "BOTTOM", 0, -5)
+totalAltsText:SetJustifyH("CENTER")
+totalAltsText:SetText("Guild Member Alts: 0")
+gf.totalAltsText = totalAltsText
+
+-- Divider 1 (after member counts)
 local div1 = content:CreateTexture(nil, "ARTWORK")
 div1:SetTexture("Interface\\DialogFrame\\UI-DialogBox-Divider")
-div1:SetPoint("TOP", totalMembersText, "BOTTOM", 36, -12)
+div1:SetPoint("TOP", totalAltsText, "BOTTOM", 36, -12)
 div1:SetWidth(300)
 div1:SetHeight(16)
 

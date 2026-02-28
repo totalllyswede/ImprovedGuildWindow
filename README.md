@@ -67,7 +67,9 @@ Click any member name to view:
 
 ### Guild Info Panel (Left Side)
 **Page 1:**
-- Guild name and member count
+- Guild name
+- Guild Members count (excludes members with "Alt" in rank name)
+- Guild Member Alts count (members with "Alt" in rank name)
 - Message of the Day
 - Guild information text
 
