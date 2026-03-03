@@ -2,7 +2,7 @@
 -- Author: Travis
 
 local IGW = {}
-IGW.VERSION = "2.9"
+IGW.VERSION = "3.0"
 
 -- Global function for keybind (must be defined early)
 function ImprovedGuildWindow_Toggle()
@@ -957,57 +957,6 @@ function IGW:CreateTabs()
     frame.tab3Text = tab3Text
     frame.tab4 = tab4
     frame.tab4Text = tab4Text
-
-    -- Switch to Calendar button (bottom right)
-    local calBtn = CreateFrame("Button", nil, frame)
-    calBtn:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -15, 15)
-    calBtn:SetWidth(140)
-    calBtn:SetHeight(tabHeight)
-    calBtn:SetFrameLevel(frame:GetFrameLevel() + 1)
-
-    calBtn:SetBackdrop({
-        bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
-        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-        tile = true,
-        tileSize = 16,
-        edgeSize = 16,
-        insets = { left = 3, right = 3, top = 3, bottom = 3 }
-    })
-    calBtn:SetBackdropColor(0.2, 0.2, 0.2, 1)
-    calBtn:SetBackdropBorderColor(0.5, 0.5, 0.5, 1)
-
-    local calBtnText = calBtn:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    calBtnText:SetPoint("CENTER", calBtn, "CENTER", 0, 0)
-    calBtnText:SetText("Switch to Calendar")
-    calBtnText:SetTextColor(0.7, 0.7, 0.7)
-
-    calBtn:SetScript("OnClick", function()
-        -- Save window states before hiding (same as ToggleWindow)
-        if ImprovedGuildWindowDB and ImprovedGuildWindowDB.rememberWindows then
-            ImprovedGuildWindowDB.windowStates = {
-                detailsOpen = IGW.detailsFrame and IGW.detailsFrame:IsVisible() or false,
-                infoOpen = IGW.infoFrame and IGW.infoFrame:IsVisible() or false
-            }
-        end
-        -- Hide main IGW windows
-        frame:Hide()
-        if IGW.detailsFrame then
-            IGW.detailsFrame:Hide()
-        end
-        if IGW.infoFrame then
-            IGW.infoFrame:Hide()
-        end
-        -- Open calendar
-        if IGWCalendarUI and IGWCalendarUI.Show then
-            IGWCalendarUI:Show()
-        end
-    end)
-
-    -- Store ref and apply initial visibility from saved setting
-    frame.calBtn = calBtn
-    if not (ImprovedGuildWindowDB and ImprovedGuildWindowDB.calendarEnabled) then
-        calBtn:Hide()
-    end
 end
 
 -- Switch between tabs
@@ -3626,20 +3575,6 @@ function IGW:ToggleOptionsWindow()
         of.allowMoveSideCheck = allowMoveSideCheck
         yOffset = yOffset - 25
         
-        -- Use Calendar Features Checkbox
-        local calendarEnabledCheck = CreateFrame("CheckButton", nil, content, "UICheckButtonTemplate")
-        calendarEnabledCheck:SetPoint("TOPLEFT", content, "TOPLEFT", 10, yOffset)
-        calendarEnabledCheck:SetWidth(24)
-        calendarEnabledCheck:SetHeight(24)
-        calendarEnabledCheck:SetChecked((ImprovedGuildWindowDB and ImprovedGuildWindowDB.calendarEnabled) or false)
-        
-        local calendarEnabledLabel = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        calendarEnabledLabel:SetPoint("LEFT", calendarEnabledCheck, "RIGHT", 5, 0)
-        calendarEnabledLabel:SetText("Use Calendar Features (Experimental - still being tested)")
-        
-        of.calendarEnabledCheck = calendarEnabledCheck
-        yOffset = yOffset - 25
-        
         -- Show Offline by Default Checkbox
         local showOfflineDefaultCheck = CreateFrame("CheckButton", nil, content, "UICheckButtonTemplate")
         showOfflineDefaultCheck:SetPoint("TOPLEFT", content, "TOPLEFT", 10, yOffset)
@@ -3802,10 +3737,6 @@ function IGW:SaveOptions()
         if of and of.bgTexture then
             of.bgTexture:SetTexture(selectedColor.r, selectedColor.g, selectedColor.b, 0.9)
         end
-        -- Apply to calendar windows
-        if IGWCalendarUI and IGWCalendarUI.ApplyTheme then
-            IGWCalendarUI:ApplyTheme(selectedColor.r, selectedColor.g, selectedColor.b, opacityValue)
-        end
         
         -- Save background color
         ImprovedGuildWindowDB.bgColor = {r = selectedColor.r, g = selectedColor.g, b = selectedColor.b}
@@ -3823,24 +3754,6 @@ function IGW:SaveOptions()
     end
     if IGW.infoFrame then
         IGW.infoFrame:SetMovable(ImprovedGuildWindowDB.allowMoveSideWindows)
-    end
-    
-    -- Save calendar enabled setting and apply immediately
-    ImprovedGuildWindowDB.calendarEnabled = of.calendarEnabledCheck:GetChecked() == 1
-    if frame and frame.calBtn then
-        if ImprovedGuildWindowDB.calendarEnabled then
-            frame.calBtn:Show()
-            -- Join sync channel if not already joined
-            if IGWCalendar and IGWCalendar.JoinChannel then
-                IGWCalendar:JoinChannel()
-            end
-        else
-            frame.calBtn:Hide()
-            -- Leave sync channel
-            if IGWCalendar and IGWCalendar.LeaveChannel then
-                IGWCalendar:LeaveChannel()
-            end
-        end
     end
     
     -- Save show offline default setting and apply immediately
@@ -3881,12 +3794,6 @@ SlashCmdList["IMPROVEDGUILDWINDOW"] = function(msg)
         IGW:ToggleWindow()
     elseif msg == "hide" then
         frame:Hide()
-    elseif msg == "calendar" or msg == "cal" then
-        if IGWCalendarUI and IGWCalendarUI.Toggle then
-            IGWCalendarUI:Toggle()
-        else
-            DEFAULT_CHAT_FRAME:AddMessage("IGW: Calendar not loaded", 1, 0, 0)
-        end
     elseif msg == "debug" then
         DEFAULT_CHAT_FRAME:AddMessage("=== IGW Debug Info ===")
         DEFAULT_CHAT_FRAME:AddMessage("Total roster data: " .. table.getn(rosterData))

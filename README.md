@@ -7,7 +7,6 @@ Enhanced guild management for World of Warcraft 1.12.1 (Turtle WoW).
 ## Side Panel Pages
 ![Side](https://github.com/user-attachments/assets/3152a431-8f0b-4f0d-a86f-8a656d25ed71)
 
-
 ## Installation
 
 1. Extract `ImprovedGuildWindow` folder to `World of Warcraft\Interface\AddOns\`
@@ -16,56 +15,34 @@ Enhanced guild management for World of Warcraft 1.12.1 (Turtle WoW).
 
 ## Features
 
-### Calendar Features (Experimental)
-**Note: Calendar features are currently experimental and still being tested.**
-
-The calendar system allows guild-wide event coordination through a shared sync channel:
-- Create and manage guild events with date, time, and duration
-- Automatic guild-wide sync through custom chat channel
-- Month view with color-coded event indicators
-- Event types: Raid, Dungeon, PvP, Guild Event, Meeting, Social
-
-To enable: Options → Window Behavior → "Use Calendar Features"
-
-When enabled:
-- "Switch to Calendar" button appears in main window
-- Auto-joins guild sync channel on login
-- Broadcasts event changes to all guild members with calendar enabled
-
 ### Four View Modes
 - **Guild Members** - Online members only with location/zone info
 - **Notes & Rank** - All members with public notes, officer notes, and last online
 - **Detailed View** - All members with date joined and timezone information
 - **Guild Info** - Statistics and guild information (side panel)
 
-### Options Menu
-Click the "Options" button to customize:
-- **Background Color** - Choose from 8 color themes
-- **Window Opacity** - Adjust transparency (30%-100%)
-- **Remember Windows** - Restore open panels between sessions
-- **Allow Moving Side Windows** - Toggle lock/unlock for side panels
-- **Default View** - Set which tab opens by default
-
-### Advanced Search & Filtering
-Main filter bar includes:
+### Main Filter Bar
 - **Search** - Quick filter by name, class, rank, or notes
 - **Rank** - Filter by guild rank
 - **Region** - Filter by timezone region (Americas, Oceania, Europe, Asia)
 - **Show Offline** - Toggle offline member visibility
 
+### Advanced Search
 Click "Advanced Search" for additional filters:
-- Public Note and Officer Note search boxes
+- Public Note search
+- Officer Note search
 - All filters work together
-- "Clear / Refresh" button resets and updates roster
+- "Clear / Refresh" button resets all filters and updates roster
 
 ### Member Details Panel (Right Side)
 Click any member name to view:
-- Full member information
+- Full member information with race, faction, date joined, and timezone
 - Edit public/officer notes (if permitted)
 - Other Characters list (requires "Alt of [Name]" in player notes)
 - Quick Whisper and Invite buttons
 
 ### Guild Info Panel (Left Side)
+
 **Page 1:**
 - Guild name
 - Guild Members count (excludes members with "Alt" in rank name)
@@ -74,7 +51,7 @@ Click any member name to view:
 - Guild information text
 
 **Page 2:**
-- Class distribution bar graph (all levels) - smaller white titles, tighter spacing
+- Class distribution bar graph (all levels)
 - Level 60 class distribution bar graph
 - Online officers list
 
@@ -85,18 +62,28 @@ Click any member name to view:
 
 **Page 4:**
 - Suggested Dungeons based on online members' levels
-- Shows up to 22 dungeons sorted by minimum level (lowest to highest)
+- Shows up to 22 dungeons sorted by minimum level
 - Only shows dungeons with at least 4 online members in range
-- Displays player count for each dungeon (e.g., "5 Players")
+- Displays player count for each dungeon
 - Color-coded by your character's level: green (in range), yellow (±3 levels), red (too low), gray (too high)
-- Includes all 31 Turtle WoW dungeons (Vanilla + custom content)
-- Shortened names: SM-Graveyard, SM-Library, SM-Armory, SM-Cathedral, LBRS, UBRS
+- Includes all 31 Turtle WoW dungeons (vanilla + custom content)
+
+### Options Menu
+Click the "Options" button to customize:
+- **Background Color** - Choose from 8 color themes
+- **Window Opacity** - Adjust transparency (30%-100%)
+- **Remember Windows** - Restore open panels between sessions
+- **Allow Moving Side Windows** - Toggle lock/unlock for side panels
+- **Default View** - Set which tab opens by default
+- **Show Offline by Default** - Member Details tab offline visibility
+- **Remember Sorting** - Persist column and direction across sessions
 
 ### Sorting & Filtering
 - Click column headers to sort
+- Default sort: Level descending on first click
 - Rank dropdown filter
 - Show/Hide offline members toggle
-- Settings persist per-tab
+- Settings persist per-tab when "Remember Sorting" is enabled
 
 ## Commands
 
@@ -105,9 +92,123 @@ Click any member name to view:
 - `/igw hide` - Hide window
 - `/igw debug` - Show debug info
 
+## Officer Note Formatting Guide
+
+The addon extracts race, faction, date joined, and timezone information from officer notes using a standardized format. This enables enhanced features in the Detailed View tab, Member Details panel, and Region filter.
+
+### Complete Format
+
+**Pattern:** `RACE-MMDDYYTTT`
+
+- **RACE** = 1-2 letter race code followed by dash (-)
+- **MMDDYY** = 6-digit date (Month/Day/Year)
+- **TTT** = 3-letter timezone code
+
+**Example:** `O-030125PST` = Orc player who joined March 1st, 2025 in PST timezone
+
+### Supported Race Codes
+
+**Alliance:**
+- **N-** = Night Elf
+- **D-** = Dwarf
+- **H-** = Human
+- **G-** = Gnome
+- **He-** = High Elf
+
+**Horde:**
+- **O-** = Orc
+- **T-** = Troll
+- **Ta-** = Tauren
+- **U-** = Undead
+- **Go-** = Goblin
+
+### Supported Timezone Codes
+
+**Americas:**
+- PST (UTC-8), PDT (UTC-7)
+- MST (UTC-7), MDT (UTC-6)
+- CST (UTC-6), CDT (UTC-5)
+- EST (UTC-5), EDT (UTC-4)
+
+**Oceania:**
+- AEST (UTC+10) - Australian Eastern
+- NZST (UTC+12) - New Zealand
+
+**Europe:**
+- GMT (UTC+0), UTC (UTC+0)
+- CET (UTC+1), EET (UTC+2)
+
+**Asia:**
+- MSK (UTC+3) - Moscow
+- IST (UTC+5:30) - India
+- JST (UTC+9) - Japan
+
+### Flexible Formatting
+
+The addon supports partial formats - you can include only the information you want to track:
+
+**Full Format:**
+- `O-030125PST` = Race + Date + Timezone
+
+**Date + Timezone (no race):**
+- `030125PST` = Joined March 1st, 2025 in PST
+
+**Race + Date (no timezone):**
+- `O-030125` = Orc who joined March 1st, 2025
+
+**Race + Timezone (no date):**
+- `O-PST` = Orc player in PST timezone
+
+**Timezone Only:**
+- `PST` = Player in PST timezone (useful for alts)
+
+**Race Only:**
+- `O-` = Orc player
+
+### Additional Text
+
+You can add any additional text after the formatted section:
+
+- `O-030125PST Main Tank` ✓
+- `N- 300 BS/300 LW` ✓
+- `He- Alt of Mainchar` ✓
+- `PST Officer` ✓
+
+The addon will extract the structured data and preserve all text in the officer note field.
+
+### Officer Note Best Practices
+
+1. **Use consistent formatting** across all members for easier management
+2. **Main characters** should have full format: `RACE-MMDDYYTTT`
+3. **Alt characters** can use minimal format: `RACE-TTT` or just `RACE-`
+4. **Timezone-only** works well for members who don't want to share join date
+5. **Add rank/role info** after the formatted section: `O-030125PST MT`
+6. **Profession info** can be in public notes for crafter detection
+
+### What Gets Displayed
+
+**Guild Members Tab:**
+- Race column (e.g., "Orc")
+- Faction column (A/H with color)
+
+**Detailed View Tab:**
+- Date Joined column (e.g., "03/01/25" or "—")
+- Time Zone column (e.g., "PST (UTC-8)" or "—")
+
+**Member Details Panel:**
+- Full member information including all extracted data
+- Race shown in "Level: 60 Orc Warrior" format
+- Faction icon (Alliance/Horde emblem)
+- Date Joined and Time Zone as separate fields
+
+**Region Filter:**
+- Automatically maps timezone to region
+- Filter members by: Americas, Oceania, Europe, Asia
+
 ## Configuration
 
 ### Crafter Detection (Page 3)
+
 Add profession info to character **public notes** for automatic detection on Guild Info Page 3.
 
 **Supported formats:**
@@ -120,69 +221,43 @@ Add profession info to character **public notes** for automatic detection on Gui
 - **Alchemy**: Alchemy, Alch, Alc
 - **Blacksmithing**: Blacksmithing, Blacksmith, Smith, BS, B.S.
 - **Enchanting**: Enchanting, Enchant, Ench, Enc
-- **Engineering**: Engineering, Engineer, Eng, Engi
+- **Engineering**: Engineering, Engineer, Eng
 - **Jewelcrafting**: Jewelcrafting, Jewel, JC, J.C.
 - **Leatherworking**: Leatherworking, Leather, LW, L.W.
-- **Tailoring**: Tailoring, Tailor, Tail, TLR
+- **Tailoring**: Tailoring, Tailor, Tail
 
-Only shows characters with 300+ skill who are currently online. Click names to whisper.
-
-### Race and Faction Detection
-Add race code to character **officer notes** for automatic race and faction display.
-
-**Format:** Race code must be followed by a dash (-) at the start of the officer note.
-
-**Supported race codes:**
-- **N-** = Night Elf (Alliance)
-- **D-** = Dwarf (Alliance)
-- **H-** = Human (Alliance)
-- **G-** = Gnome (Alliance)
-- **He-** = High Elf (Alliance)
-- **O-** = Orc (Horde)
-- **T-** = Troll (Horde)
-- **Ta-** = Tauren (Horde)
-- **U-** = Undead (Horde)
-- **Go-** = Goblin (Horde)
-
-**Examples:**
-- `O-` or `O- Main Tank` = Orc, displays "Orc" in Race column and "H" in A/H column
-- `He- Alt of Mainchar` = High Elf, displays "High Elf" in Race column and "A" in A/H column
-- `D- 300 BS/300 LW` = Dwarf, displays race and faction with profession info intact
-
-Race appears in Guild Members tab and Member Details window. Faction icon (Alliance/Horde) appears in Member Details window. If no race code is found, cells remain blank.
-
-### Date Joined & Timezone Format
-Add date and/or timezone to officer notes to populate the Detailed View tab and Member Details panel.
-
-**Format:** `MMDDYYTTT` where MMDDYY is the date and TTT is the 3-letter timezone code.
-
-**Supported formats:**
-- `O-030125PST` = Full format (race, date, timezone)
-- `030125PST` = Date and timezone (no race)
-- `O-PST` = Race and timezone only (no date)
-- `PST` = Timezone only (no race or date)
-- `O-030125` = Race and date only (no timezone)
-
-**Supported timezones:**
-PST, PDT, MST, MDT, CST, CDT, EST, EDT, GMT, UTC, CET, EET, MSK, IST, JST, AEST, NZST
-
-Timezones display as "PST (UTC-8)" format in both Member Details and Detailed View tab.
+Detection requires:
+- Skill level 300 or higher
+- Player must be online
+- Case-insensitive matching
 
 ### Officer Detection
+
 Edit `OFFICER_RANK_THRESHOLD` in the .lua file (default: 2)
 - 0 = Guild Master only
 - 1 = Guild Master + first officer rank
 - 2 = Guild Master + top 2 ranks (default)
 
 ### Alt Detection
+
 Add "Alt of [MainName]" to character **public notes** for automatic detection.
 Works bidirectionally - view any character to see their alts and main.
 
 ## Version
 
-**2.9** - Latest stable release
+**3.0** - Latest stable release
 
 ### Changelog
+
+**3.0**
+- Removed all Calendar features (experimental features discontinued)
+- Cleaned up codebase for improved stability
+- Guild Info Page 1 now shows separate counts:
+  - "Guild Members" (excludes ranks with "Alt")
+  - "Guild Member Alts" (ranks containing "Alt")
+- Timezone extraction now works independently of date field
+- Support for timezone-only officer notes (e.g., just "PST")
+- Comprehensive officer note formatting guide added to README
 
 **2.9**
 - Renamed "Member Details" tab to "Notes & Rank"
@@ -211,41 +286,16 @@ Works bidirectionally - view any character to see their alts and main.
 
 **2.8**
 - Added Guild Info Page 4: Suggested Dungeons
-  - Shows up to 22 dungeons based on online members' levels
-  - Requires 4+ online members in level range to appear
-  - Color-coded by your character's level (green/yellow/red/gray)
-  - Displays player count for group-forming potential
-  - Includes all 31 Turtle WoW dungeons (vanilla + custom)
-  - Shortened dungeon names (SM-*, LBRS, UBRS) to save space
-- Enhanced Guild Info Page 2
-  - Added Level 60 class distribution bar graph
-  - Smaller white titles with tighter spacing
-  - Removed Level 60 count and zone displays
-- Fixed keybinding error (moved global toggle function to top of file)
-- All side panel pages now use consistent formatting
+- Enhanced Guild Info Page 2 with Level 60 class distribution
+- Fixed keybinding error
+- Consistent formatting across all side panel pages
 
 **2.7**
-- Added "Show offline members by default" option (Member Details tab)
-- Added "Remember sorting" option (column and direction persistence)
-- Level column now defaults to descending on first click (60→1)
-- Clear/Refresh button now also resets sorting to defaults
-- Member Details tab now respects saved Show Offline preference
-- Fixed sorting persistence: tabs now respect Remember Sorting setting
-- Reduced options menu spacing for better fit
-- Fixed RaiseFrame error (removed non-existent 1.12.1 function)
-
-**2.6**
-- Added experimental Calendar Features (opt-in via Options menu)
-- Guild-wide event sync through custom chat channel
-- Month view with color-coded event indicators by type
-- Day picker dialog with proper alignment and headers
-- Calendar toggle: auto-join/leave sync channel, hide/show button
-- Fixed RaiseFrame error on window drag (not available in 1.12.1)
-- Normalized window strata hierarchy for proper focus handling
-- Improved sync protocol: rank-based delays with random jitter to prevent collision
-
-**2.5**
-- Calendar system foundation (internal build)
+- Added "Show offline members by default" option
+- Added "Remember sorting" option
+- Level column defaults to descending on first click
+- Clear/Refresh button resets sorting
+- Improved sorting persistence
 
 **2.4**
 - Enhanced member details panel layout
@@ -253,45 +303,28 @@ Works bidirectionally - view any character to see their alts and main.
 
 **2.3**
 - Added Goblin (Go-) and High Elf (He-) race support
-- Fixed "Remember Windows" setting to save when using X button to close
-- Changed to use default WoW note edit dialogs (shows current note correctly)
-- 10 total races now supported (5 Alliance, 5 Horde)
+- Fixed "Remember Windows" setting
+- Default WoW note edit dialogs
+- 10 total races now supported
 
 **2.2**
 - Added Race and Faction columns to Guild Members tab
-- Race detection from officer notes (requires dash format: "O-", "N-", etc.)
-- Faction column shows "A" (Alliance, blue) or "H" (Horde, red)
-- Race displayed in Member Details window (Level: X Race Class format)
-- Faction icon in Member Details window (Alliance/Horde emblems)
-- Clickable crafter names on Guild Info Page 3 to whisper directly
-- Race/Faction cells remain blank when no data present
+- Race detection from officer notes (dash format)
+- Faction column shows "A" (Alliance) or "H" (Horde)
+- Clickable crafter names on Guild Info Page 3
 
 **2.1**
 - Added Guild Info Page 3: Max Level Crafters Online
-- Displays crafters with 300+ skill (online only)
-- 7 crafting professions: Alchemy, Blacksmithing, Enchanting, Engineering, Jewelcrafting, Leatherworking, Tailoring
-- Flexible profession detection (supports abbreviations and multiple formats)
-- Clickable names to whisper crafters directly
-- Reads from character public notes
+- 7 crafting professions supported
+- Flexible profession detection from public notes
 
 **2.0**
 - Complete visual overhaul with solid backgrounds
-- Customizable colors (8 themes: Grey, Black, Blue, Brown, Green, Purple, Red, Cyan)
+- Customizable colors (8 themes)
 - Adjustable opacity per window (30-100%)
 - Options menu with comprehensive settings
 - Remember open windows between sessions
-- Movable/lockable side panels option
-- Choose default view tab
-- Options window at 90% opacity
-- Fixed color persistence across reloads
-
-**1.10**
-- Options window matched to main window size
-- Updated options title
-
-**1.9**
-- Initial options menu implementation
-- Basic visual and behavior settings
+- Movable/lockable side panels
 
 ## Author
 
