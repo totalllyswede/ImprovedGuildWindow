@@ -104,23 +104,29 @@ The addon extracts race, faction, date joined, and timezone information from off
 - **MMDDYY** = 6-digit date (Month/Day/Year)
 - **TTT** = 3-letter timezone code
 
-**Example:** `O-030125PST` = Orc player who joined March 1st, 2025 in PST timezone
+**Examples:** 
+- `Or-030125PST` = Orc player who joined March 1st, 2025 in PST timezone
+- `NE-121524EST` = Night Elf who joined December 15th, 2024 in EST timezone
 
 ### Supported Race Codes
 
+Both single-letter and two-letter codes are supported for clarity:
+
 **Alliance:**
-- **N-** = Night Elf
-- **D-** = Dwarf
-- **H-** = Human
-- **G-** = Gnome
-- **He-** = High Elf
+- **NE-** or **N-** = Night Elf
+- **Dw-** or **D-** = Dwarf
+- **Hu-** or **H-** = Human
+- **Gn-** or **G-** = Gnome
+- **HE-** or **He-** = High Elf
 
 **Horde:**
-- **O-** = Orc
-- **T-** = Troll
+- **Or-** or **O-** = Orc
+- **Tr-** or **T-** = Troll
 - **Ta-** = Tauren
-- **U-** = Undead
+- **Un-** or **U-** = Undead
 - **Go-** = Goblin
+
+*Note: Codes are case-insensitive (e.g., HE-, He-, or he- all work)*
 
 ### Supported Timezone Codes
 
@@ -148,41 +154,42 @@ The addon extracts race, faction, date joined, and timezone information from off
 The addon supports partial formats - you can include only the information you want to track:
 
 **Full Format:**
-- `O-030125PST` = Race + Date + Timezone
+- `Or-030125PST` = Race + Date + Timezone
+- `NE-121524EST` = Race + Date + Timezone
 
 **Date + Timezone (no race):**
 - `030125PST` = Joined March 1st, 2025 in PST
 
 **Race + Date (no timezone):**
-- `O-030125` = Orc who joined March 1st, 2025
+- `Hu-030125` = Human who joined March 1st, 2025
 
 **Race + Timezone (no date):**
-- `O-PST` = Orc player in PST timezone
+- `Dw-PST` = Dwarf player in PST timezone
 
 **Timezone Only:**
 - `PST` = Player in PST timezone (useful for alts)
 
 **Race Only:**
-- `O-` = Orc player
+- `Un-` = Undead player
 
 ### Additional Text
 
 You can add any additional text after the formatted section:
 
-- `O-030125PST Main Tank` ✓
-- `N- 300 BS/300 LW` ✓
-- `He- Alt of Mainchar` ✓
-- `PST Officer` ✓
+- `Or-030125PST Main Tank` ✓
+- `NE- 300 BS/300 LW` ✓
+- `HE- Alt of Mainchar` ✓
+- `Hu-PST Officer` ✓
 
 The addon will extract the structured data and preserve all text in the officer note field.
 
 ### Officer Note Best Practices
 
 1. **Use consistent formatting** across all members for easier management
-2. **Main characters** should have full format: `RACE-MMDDYYTTT`
-3. **Alt characters** can use minimal format: `RACE-TTT` or just `RACE-`
+2. **Main characters** should have full format: `RACE-MMDDYYTTT` (e.g., `Or-030125PST`)
+3. **Alt characters** can use minimal format: `RACE-TTT` or just `RACE-` (e.g., `Un-EST` or `Dw-`)
 4. **Timezone-only** works well for members who don't want to share join date
-5. **Add rank/role info** after the formatted section: `O-030125PST MT`
+5. **Add rank/role info** after the formatted section: `NE-030125PST MT`
 6. **Profession info** can be in public notes for crafter detection
 
 ### What Gets Displayed

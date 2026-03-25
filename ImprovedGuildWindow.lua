@@ -48,6 +48,255 @@ local TIMEZONES = {
     NZST = "NZST (UTC+12)"
 }
 
+-- Dungeon details database
+local DUNGEON_DETAILS = {
+    ["Ragefire Chasm"] = {
+        location = "Orgrimmar",
+        faction = "Horde",
+        description = "A volcanic chasm beneath Orgrimmar inhabited by troggs and cultists.",
+        bosses = "Taragaman the Hungerer, Jergosh the Invoker",
+        notable = "Cloth, Fire resist gear"
+    },
+    ["The Deadmines"] = {
+        location = "Westfall",
+        faction = "Alliance",
+        description = "An abandoned mine overrun by the Defias Brotherhood.",
+        bosses = "Edwin VanCleef, Sneed, Mr. Smite",
+        notable = "Cruel Barb, Smite's Hammer"
+    },
+    ["Wailing Caverns"] = {
+        location = "Northern Barrens",
+        faction = "Neutral",
+        description = "Twisted caverns corrupted by druids of the Fang.",
+        bosses = "Lady Anacondra, Lord Pythas, Mutanus",
+        notable = "Armor of the Fang set, Glowing Lizardscale Cloak"
+    },
+    ["Stockades"] = {
+        location = "Stormwind City",
+        faction = "Alliance",
+        description = "The prison of Stormwind, now controlled by rioting prisoners.",
+        bosses = "Bazil Thredd, Dextren Ward",
+        notable = "Prison variety loot"
+    },
+    ["Blackfathom Deeps"] = {
+        location = "Ashenvale",
+        faction = "Neutral",
+        description = "Sunken temple ruins inhabited by naga and corrupted creatures.",
+        bosses = "Gelihast, Lady Sarevess, Aku'mai",
+        notable = "Blackfathom Mana Oil, Strike of the Hydra"
+    },
+    ["Dragonmaw Retreat"] = {
+        location = "Wetlands (Turtle WoW)",
+        faction = "Neutral",
+        description = "Former stronghold of the Dragonmaw clan.",
+        bosses = "Various Dragonmaw leaders",
+        notable = "Custom Turtle WoW dungeon"
+    },
+    ["SM-Graveyard"] = {
+        location = "Tirisfal Glades",
+        faction = "Neutral",
+        description = "Scarlet Monastery Graveyard wing, haunted by the undead.",
+        bosses = "Interrogator Vishas, Bloodmage Thalnos",
+        notable = "Scarlet gear, good XP"
+    },
+    ["Gnomeregan"] = {
+        location = "Dun Morogh",
+        faction = "Alliance",
+        description = "The fallen capital of the gnomes, irradiated and overrun by troggs.",
+        bosses = "Mekgineer Thermaplugg, Crowd Pummeler 9-60",
+        notable = "Electrocutioner Leg, Triprunner Dungarees"
+    },
+    ["Crescent Grove"] = {
+        location = "Feralas (Turtle WoW)",
+        faction = "Neutral",
+        description = "Ancient druidic grove with moonkin and satyr.",
+        bosses = "Various nature guardians",
+        notable = "Custom Turtle WoW dungeon"
+    },
+    ["SM-Library"] = {
+        location = "Tirisfal Glades",
+        faction = "Neutral",
+        description = "Scarlet Monastery Library wing filled with zealots and undead.",
+        bosses = "Arcanist Doan, Houndmaster Loksey",
+        notable = "Illusionary Rod, Hypnotic Blade"
+    },
+    ["Razorfen Kraul"] = {
+        location = "Southern Barrens",
+        faction = "Neutral",
+        description = "Twisting bramble-filled tunnels home to quilboar.",
+        bosses = "Charlga Razorflank, Agathelos",
+        notable = "Corpsemaker, Razorfen Spaulders"
+    },
+    ["Stormwrought Ruins"] = {
+        location = "Azshara (Turtle WoW)",
+        faction = "Neutral",
+        description = "Ancient naga ruins crackling with arcane energy.",
+        bosses = "Various naga champions",
+        notable = "Custom Turtle WoW dungeon"
+    },
+    ["SM-Armory"] = {
+        location = "Tirisfal Glades",
+        faction = "Neutral",
+        description = "Scarlet Monastery Armory, training ground for Scarlet warriors.",
+        bosses = "Herod the Bully",
+        notable = "Ravager, Scarlet Leggings"
+    },
+    ["SM-Cathedral"] = {
+        location = "Tirisfal Glades",
+        faction = "Neutral",
+        description = "Scarlet Monastery Cathedral, seat of the Scarlet High Command.",
+        bosses = "High Inquisitor Whitemane, Scarlet Commander Mograine",
+        notable = "Whitemane's Chapeau, Mograine's Might"
+    },
+    ["Uldaman"] = {
+        location = "Badlands",
+        faction = "Neutral",
+        description = "Ancient titan vault filled with troggs, dwarves, and stone constructs.",
+        bosses = "Archaedas, Ironaya, Galgann Firehammer",
+        notable = "The Rockpounder, Archaedic Stone"
+    },
+    ["Razorfen Downs"] = {
+        location = "Southern Barrens",
+        faction = "Neutral",
+        description = "Death-knight controlled quilboar city serving the Scourge.",
+        bosses = "Amnennar the Coldbringer, Tuten'kash",
+        notable = "Shoulder of the Fallen Crusader, Ebon Vise"
+    },
+    ["Gilneas City"] = {
+        location = "Gilneas (Turtle WoW)",
+        faction = "Neutral",
+        description = "Fallen city overrun by worgen and dark forces.",
+        bosses = "Various worgen alphas",
+        notable = "Custom Turtle WoW dungeon"
+    },
+    ["Maraudon"] = {
+        location = "Desolace",
+        faction = "Neutral",
+        description = "Massive underground cavern complex with corrupted earth elementals.",
+        bosses = "Princess Theradras, Celebras, Noxxion",
+        notable = "Blackstone Ring, Nature Resist gear"
+    },
+    ["Zul'Farrak"] = {
+        location = "Tanaris",
+        faction = "Neutral",
+        description = "Ancient troll city buried in the desert sands.",
+        bosses = "Chief Ukorz Sandscalp, Gahz'rilla",
+        notable = "Sul'thraze, Lifeforce Dirk"
+    },
+    ["Sunken Temple"] = {
+        location = "Swamp of Sorrows",
+        faction = "Neutral",
+        description = "Temple of Atal'Hakkar, sunken ruin of troll worship.",
+        bosses = "Avatar of Hakkar, Shade of Eranikus",
+        notable = "Drakestone, Eranikus' Fang"
+    },
+    ["Blackrock Depths"] = {
+        location = "Blackrock Mountain",
+        faction = "Neutral",
+        description = "Massive dark iron dwarf city inside Blackrock Mountain.",
+        bosses = "Emperor Dagran Thaurissan, General Angerforge",
+        notable = "Hand of Justice, Ironfoe"
+    },
+    ["Hateforge Quarry"] = {
+        location = "Blackrock Mountain (Turtle WoW)",
+        faction = "Neutral",
+        description = "Dark iron mining operation with enslaved workers.",
+        bosses = "Various dark iron overseers",
+        notable = "Custom Turtle WoW dungeon"
+    },
+    ["Dire Maul West"] = {
+        location = "Feralas",
+        faction = "Neutral",
+        description = "Western gardens of the fallen night elf city.",
+        bosses = "Tendris Warpwood, Immol'thar, Prince Tortheldrin",
+        notable = "Warpwood Binding, Dreadmist Belt"
+    },
+    ["Dire Maul East"] = {
+        location = "Feralas",
+        faction = "Neutral",
+        description = "Eastern section overrun by demons and imps.",
+        bosses = "Alzzin the Wildshaper, Isalien",
+        notable = "Felhide Cap, Energized Chestplate"
+    },
+    ["LBRS"] = {
+        location = "Blackrock Mountain",
+        faction = "Neutral",
+        description = "Lower Blackrock Spire, home to the Dark Horde.",
+        bosses = "General Drakkisath, War Master Voone",
+        notable = "Truestrike Shoulders, Dal'Rend's set"
+    },
+    ["Dire Maul North"] = {
+        location = "Feralas",
+        faction = "Neutral",
+        description = "Northern wing featuring tribute runs and King Gordok.",
+        bosses = "King Gordok, Cho'Rush the Observer",
+        notable = "Tribute buffs, Ogre Tannin"
+    },
+    ["Scholomance"] = {
+        location = "Western Plaguelands",
+        faction = "Neutral",
+        description = "Former school of necromancy, now Scourge stronghold.",
+        bosses = "Darkmaster Gandling, Ras Frostwhisper",
+        notable = "Deathbone set, Necromancy books"
+    },
+    ["Stratholme"] = {
+        location = "Eastern Plaguelands",
+        faction = "Neutral",
+        description = "Plagued city divided between Scourge and Scarlet forces.",
+        bosses = "Baron Rivendare, Ramstein, Balnazzar",
+        notable = "Deathcharger's Reins, Runeblade of Baron Rivendare"
+    },
+    ["UBRS"] = {
+        location = "Blackrock Mountain",
+        faction = "Neutral",
+        description = "Upper Blackrock Spire, lair of General Drakkisath.",
+        bosses = "General Drakkisath, Rend Blackhand",
+        notable = "Tier 0 upgrades, Dalrend's Sacred Charge"
+    },
+    ["Stormwind Vault"] = {
+        location = "Stormwind City (Turtle WoW)",
+        faction = "Alliance",
+        description = "The royal treasury, infiltrated by thieves.",
+        bosses = "Various elite robbers",
+        notable = "Custom Turtle WoW dungeon"
+    },
+    ["Karazhan Crypt"] = {
+        location = "Deadwind Pass (Turtle WoW)",
+        faction = "Neutral",
+        description = "Crypts beneath Karazhan filled with spirits and undead.",
+        bosses = "Various undead guardians",
+        notable = "Custom Turtle WoW dungeon"
+    }
+}
+
+-- Dungeon loading screen textures
+local DUNGEON_TEXTURES = {
+    ["Ragefire Chasm"] = "Interface\\Glues\\LoadingScreens\\LoadScreenRFC",
+    ["The Deadmines"] = "Interface\\Glues\\LoadingScreens\\LoadScreenDeadmines",
+    ["Wailing Caverns"] = "Interface\\Glues\\LoadingScreens\\LoadScreenWailingCaverns",
+    ["Stockades"] = "Interface\\Glues\\LoadingScreens\\LoadScreenStockades",
+    ["Blackfathom Deeps"] = "Interface\\Glues\\LoadingScreens\\LoadScreenBlackfathomDeeps",
+    ["Gnomeregan"] = "Interface\\Glues\\LoadingScreens\\LoadScreenGnomeregan",
+    ["Razorfen Kraul"] = "Interface\\Glues\\LoadingScreens\\LoadScreenRazorfenKraul",
+    ["SM-Graveyard"] = "Interface\\Glues\\LoadingScreens\\LoadScreenScarletMonastery",
+    ["SM-Library"] = "Interface\\Glues\\LoadingScreens\\LoadScreenScarletMonastery",
+    ["SM-Armory"] = "Interface\\Glues\\LoadingScreens\\LoadScreenScarletMonastery",
+    ["SM-Cathedral"] = "Interface\\Glues\\LoadingScreens\\LoadScreenScarletMonastery",
+    ["Uldaman"] = "Interface\\Glues\\LoadingScreens\\LoadScreenUldaman",
+    ["Razorfen Downs"] = "Interface\\Glues\\LoadingScreens\\LoadScreenRazorfenDowns",
+    ["Maraudon"] = "Interface\\Glues\\LoadingScreens\\LoadScreenMaraudon",
+    ["Zul'Farrak"] = "Interface\\Glues\\LoadingScreens\\LoadScreenZulFarrak",
+    ["Sunken Temple"] = "Interface\\Glues\\LoadingScreens\\LoadScreenSunkenTemple",
+    ["Blackrock Depths"] = "Interface\\Glues\\LoadingScreens\\LoadScreenBlackrockDepths",
+    ["Dire Maul West"] = "Interface\\Glues\\LoadingScreens\\LoadScreenDireMaul",
+    ["Dire Maul East"] = "Interface\\Glues\\LoadingScreens\\LoadScreenDireMaul",
+    ["Dire Maul North"] = "Interface\\Glues\\LoadingScreens\\LoadScreenDireMaul",
+    ["LBRS"] = "Interface\\Glues\\LoadingScreens\\LoadScreenBlackrockSpire",
+    ["UBRS"] = "Interface\\Glues\\LoadingScreens\\LoadScreenBlackrockSpire",
+    ["Scholomance"] = "Interface\\Glues\\LoadingScreens\\LoadScreenScholomance",
+    ["Stratholme"] = "Interface\\Glues\\LoadingScreens\\LoadScreenStratholme"
+}
+
 -- Timezone to region mapping
 local TIMEZONE_REGIONS = {
     -- Americas
@@ -109,18 +358,25 @@ end
 local function IGW_GetRace(officerNote)
     if not officerNote or officerNote == "" then return "" end
     
-    -- Check for 2-character codes first (Ta-, He-, Go-)
+    -- Check for 2-character codes first (Ta-, He-, Go-, Hu-, NE-, Dw-, Un-)
     local firstTwo = string.sub(officerNote, 1, 2)
     local thirdChar = string.sub(officerNote, 3, 3)
     
     if thirdChar == "-" then
         if firstTwo == "Ta" then return "Tauren"
-        elseif firstTwo == "He" then return "High Elf"
+        elseif firstTwo == "He" or firstTwo == "HE" then return "High Elf"
         elseif firstTwo == "Go" then return "Goblin"
+        elseif firstTwo == "Hu" or firstTwo == "HU" then return "Human"
+        elseif firstTwo == "NE" then return "Night Elf"
+        elseif firstTwo == "Dw" or firstTwo == "DW" then return "Dwarf"
+        elseif firstTwo == "Un" or firstTwo == "UN" then return "Undead"
+        elseif firstTwo == "Gn" or firstTwo == "GN" then return "Gnome"
+        elseif firstTwo == "Or" or firstTwo == "OR" then return "Orc"
+        elseif firstTwo == "Tr" or firstTwo == "TR" then return "Troll"
         end
     end
     
-    -- Check for single char + dash
+    -- Check for single char + dash (backwards compatibility)
     local firstChar = string.sub(officerNote, 1, 1)
     local secondChar = string.sub(officerNote, 2, 2)
     
@@ -2824,6 +3080,97 @@ function IGW:UpdateCraftersPage()
     end
 end
 
+-- Show dungeon details dialog
+function IGW:ShowDungeonDetailsDialog(dungeon)
+    if not dungeon then return end
+    
+    -- Create dialog if it doesn't exist
+    if not IGW.dungeonDialog then
+        local dialog = CreateFrame("Frame", "IGW_DungeonDetailsDialog", UIParent)
+        dialog:SetWidth(350)
+        dialog:SetHeight(220)
+        dialog:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+        dialog:SetFrameStrata("DIALOG")
+        dialog:SetBackdrop({
+            bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+            edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+            tile = true,
+            tileSize = 32,
+            edgeSize = 32,
+            insets = { left = 11, right = 12, top = 12, bottom = 11 }
+        })
+        dialog:SetBackdropColor(0, 0, 0, 1)
+        dialog:EnableMouse(true)
+        dialog:SetMovable(true)
+        dialog:RegisterForDrag("LeftButton")
+        dialog:SetScript("OnDragStart", function() this:StartMoving() end)
+        dialog:SetScript("OnDragStop", function() this:StopMovingOrSizing() end)
+        
+        -- Title
+        local title = dialog:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+        title:SetPoint("TOP", dialog, "TOP", 0, -20)
+        dialog.title = title
+        
+        -- Level range
+        local levelRange = dialog:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+        levelRange:SetPoint("TOP", title, "BOTTOM", 0, -10)
+        dialog.levelRange = levelRange
+        
+        -- Location
+        local location = dialog:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        location:SetPoint("TOP", levelRange, "BOTTOM", 0, -8)
+        dialog.location = location
+        
+        -- Faction
+        local faction = dialog:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        faction:SetPoint("TOP", location, "BOTTOM", 0, -5)
+        dialog.faction = faction
+        
+        -- Divider
+        local divider = dialog:CreateTexture(nil, "ARTWORK")
+        divider:SetHeight(1)
+        divider:SetWidth(310)
+        divider:SetPoint("TOP", faction, "BOTTOM", 0, -10)
+        divider:SetTexture(1, 1, 1, 0.2)
+        
+        -- Description
+        local description = dialog:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        description:SetPoint("TOP", divider, "BOTTOM", 0, -10)
+        description:SetWidth(310)
+        description:SetJustifyH("LEFT")
+        description:SetSpacing(3)
+        dialog.description = description
+        
+        -- Close button
+        local closeBtn = CreateFrame("Button", nil, dialog, "UIPanelCloseButton")
+        closeBtn:SetPoint("TOPRIGHT", dialog, "TOPRIGHT", -5, -5)
+        
+        dialog:Hide()
+        IGW.dungeonDialog = dialog
+    end
+    
+    local dialog = IGW.dungeonDialog
+    
+    -- Update dialog content
+    dialog.title:SetText(dungeon.name)
+    dialog.levelRange:SetText(string.format("Level %d-%d", dungeon.minLevel, dungeon.maxLevel))
+    dialog.location:SetText("Location: " .. (dungeon.location or "Unknown"))
+    
+    -- Faction coloring
+    local factionText = "Faction: "
+    if dungeon.faction == "Alliance" then
+        dialog.faction:SetText(factionText .. "|cFF0080FFAlliance|r")
+    elseif dungeon.faction == "Horde" then
+        dialog.faction:SetText(factionText .. "|cFFFF0000Horde|r")
+    else
+        dialog.faction:SetText(factionText .. "Both")
+    end
+    
+    dialog.description:SetText(dungeon.description or "No description available.")
+    
+    dialog:Show()
+end
+
 -- Update Page 4 - Suggested Dungeons
 function IGW:UpdateDungeonsPage()
     local gf = IGW.infoFrame
@@ -2864,37 +3211,37 @@ function IGW:UpdateDungeonsPage()
     
     -- Dungeon database with level ranges (Turtle WoW)
     local dungeons = {
-        {name = "Ragefire Chasm", minLevel = 13, maxLevel = 18},
-        {name = "The Deadmines", minLevel = 17, maxLevel = 24},
-        {name = "Wailing Caverns", minLevel = 17, maxLevel = 24},
-        {name = "Stockades", minLevel = 22, maxLevel = 30},
-        {name = "Blackfathom Deeps", minLevel = 22, maxLevel = 31},
-        {name = "Dragonmaw Retreat", minLevel = 25, maxLevel = 34},
-        {name = "SM-Graveyard", minLevel = 27, maxLevel = 36},
-        {name = "Gnomeregan", minLevel = 29, maxLevel = 38},
-        {name = "Crescent Grove", minLevel = 32, maxLevel = 38},
-        {name = "SM-Library", minLevel = 32, maxLevel = 39},
-        {name = "Razorfen Kraul", minLevel = 32, maxLevel = 42},
-        {name = "Stormwrought Ruins", minLevel = 35, maxLevel = 41},
-        {name = "SM-Armory", minLevel = 40, maxLevel = 45},
-        {name = "SM-Cathedral", minLevel = 40, maxLevel = 45},
-        {name = "Uldaman", minLevel = 40, maxLevel = 51},
-        {name = "Razorfen Downs", minLevel = 42, maxLevel = 44},
-        {name = "Gilneas City", minLevel = 43, maxLevel = 49},
-        {name = "Maraudon", minLevel = 45, maxLevel = 55},
-        {name = "Zul'Farrak", minLevel = 46, maxLevel = 56},
-        {name = "Sunken Temple", minLevel = 50, maxLevel = 60},
-        {name = "Blackrock Depths", minLevel = 52, maxLevel = 60},
-        {name = "Hateforge Quarry", minLevel = 52, maxLevel = 60},
-        {name = "Dire Maul West", minLevel = 55, maxLevel = 60},
-        {name = "Dire Maul East", minLevel = 55, maxLevel = 60},
-        {name = "LBRS", minLevel = 55, maxLevel = 60},
-        {name = "Dire Maul North", minLevel = 58, maxLevel = 60},
-        {name = "Scholomance", minLevel = 58, maxLevel = 60},
-        {name = "Stratholme", minLevel = 58, maxLevel = 60},
-        {name = "UBRS", minLevel = 55, maxLevel = 60},
-        {name = "Stormwind Vault", minLevel = 60, maxLevel = 60},
-        {name = "Karazhan Crypt", minLevel = 60, maxLevel = 60}
+        {name = "Ragefire Chasm", minLevel = 13, maxLevel = 18, location = "Orgrimmar", faction = "Horde", description = "A lava-filled cavern beneath Orgrimmar, home to Trogg invaders and fire cultists."},
+        {name = "The Deadmines", minLevel = 17, maxLevel = 24, location = "Westfall", faction = "Alliance", description = "A network of tunnels beneath Westfall controlled by the Defias Brotherhood."},
+        {name = "Wailing Caverns", minLevel = 17, maxLevel = 24, location = "The Barrens", faction = "Both", description = "A corrupted underground oasis in the Barrens with deviate creatures."},
+        {name = "Stockades", minLevel = 22, maxLevel = 30, location = "Stormwind", faction = "Alliance", description = "A high-security prison in Stormwind where dangerous criminals are held."},
+        {name = "Blackfathom Deeps", minLevel = 22, maxLevel = 31, location = "Ashenvale", faction = "Both", description = "A former temple now overrun by the Twilight's Hammer cult."},
+        {name = "Dragonmaw Retreat", minLevel = 25, maxLevel = 34, location = "Wetlands", faction = "Both", description = "A custom Turtle WoW dungeon featuring Dragonmaw orcs in the Wetlands."},
+        {name = "SM-Graveyard", minLevel = 27, maxLevel = 36, location = "Tirisfal Glades", faction = "Both", description = "Scarlet Monastery: Graveyard - The burial grounds corrupted by the undead."},
+        {name = "Gnomeregan", minLevel = 29, maxLevel = 38, location = "Dun Morogh", faction = "Both", description = "The irradiated gnomish city, now overrun by troggs and malfunctioning machines."},
+        {name = "Crescent Grove", minLevel = 32, maxLevel = 38, location = "Feralas", faction = "Both", description = "A custom Turtle WoW dungeon in Feralas with ancient night elf ruins."},
+        {name = "SM-Library", minLevel = 32, maxLevel = 39, location = "Tirisfal Glades", faction = "Both", description = "Scarlet Monastery: Library - Repository of Scarlet Crusade knowledge."},
+        {name = "Razorfen Kraul", minLevel = 32, maxLevel = 42, location = "The Barrens", faction = "Both", description = "An ancient quilboar stronghold with death speaker cultists."},
+        {name = "Stormwrought Ruins", minLevel = 35, maxLevel = 41, location = "Azshara", faction = "Both", description = "A custom Turtle WoW dungeon featuring elementals and ancient magic."},
+        {name = "SM-Armory", minLevel = 40, maxLevel = 45, location = "Tirisfal Glades", faction = "Both", description = "Scarlet Monastery: Armory - Training grounds of the Scarlet Crusade."},
+        {name = "SM-Cathedral", minLevel = 40, maxLevel = 45, location = "Tirisfal Glades", faction = "Both", description = "Scarlet Monastery: Cathedral - The heart of Scarlet Crusade power."},
+        {name = "Uldaman", minLevel = 40, maxLevel = 51, location = "Badlands", faction = "Both", description = "An ancient titan vault filled with troggs and earthen constructs."},
+        {name = "Razorfen Downs", minLevel = 42, maxLevel = 44, location = "The Barrens", faction = "Both", description = "A quilboar burial ground corrupted by the Scourge."},
+        {name = "Gilneas City", minLevel = 43, maxLevel = 49, location = "Gilneas", faction = "Both", description = "A custom Turtle WoW dungeon in the cursed ruins of Gilneas."},
+        {name = "Maraudon", minLevel = 45, maxLevel = 55, location = "Desolace", faction = "Both", description = "A vast cavern complex beneath Desolace with centaur and elemental forces."},
+        {name = "Zul'Farrak", minLevel = 46, maxLevel = 56, location = "Tanaris", faction = "Both", description = "An ancient troll city in Tanaris filled with sandfury trolls."},
+        {name = "Sunken Temple", minLevel = 50, maxLevel = 60, location = "Swamp of Sorrows", faction = "Both", description = "Temple of Atal'Hakkar - An ancient troll temple dedicated to the blood god."},
+        {name = "Blackrock Depths", minLevel = 52, maxLevel = 60, location = "Blackrock Mountain", faction = "Both", description = "A massive Dark Iron dwarf city within Blackrock Mountain."},
+        {name = "Hateforge Quarry", minLevel = 52, maxLevel = 60, location = "Searing Gorge", faction = "Both", description = "A custom Turtle WoW dungeon with Dark Iron operations."},
+        {name = "Dire Maul West", minLevel = 55, maxLevel = 60, location = "Feralas", faction = "Both", description = "Ancient elven ruins overrun by ogres - Western wing."},
+        {name = "Dire Maul East", minLevel = 55, maxLevel = 60, location = "Feralas", faction = "Both", description = "Ancient elven ruins overrun by ogres - Eastern wing."},
+        {name = "LBRS", minLevel = 55, maxLevel = 60, location = "Blackrock Mountain", faction = "Both", description = "Lower Blackrock Spire - Orc stronghold within Blackrock Mountain."},
+        {name = "Dire Maul North", minLevel = 58, maxLevel = 60, location = "Feralas", faction = "Both", description = "Ancient elven ruins - Northern wing with the Tribute Run."},
+        {name = "Scholomance", minLevel = 58, maxLevel = 60, location = "Western Plaguelands", faction = "Both", description = "A school of necromancy run by the Scourge."},
+        {name = "Stratholme", minLevel = 58, maxLevel = 60, location = "Eastern Plaguelands", faction = "Both", description = "A city destroyed by the Scourge with Living and Undead sides."},
+        {name = "UBRS", minLevel = 55, maxLevel = 60, location = "Blackrock Mountain", faction = "Both", description = "Upper Blackrock Spire - Stronghold of the Blackrock orcs."},
+        {name = "Stormwind Vault", minLevel = 60, maxLevel = 60, location = "Stormwind", faction = "Alliance", description = "A custom Turtle WoW dungeon beneath Stormwind."},
+        {name = "Karazhan Crypt", minLevel = 60, maxLevel = 60, location = "Deadwind Pass", faction = "Both", description = "A custom Turtle WoW dungeon in the crypts beneath Karazhan."}
     }
     
     -- Score each dungeon based on how well it fits the online levels
@@ -2924,10 +3271,18 @@ function IGW:UpdateDungeonsPage()
     for i, dungeon in ipairs(dungeons) do
         if displayed >= 22 then break end
         if dungeon.score >= 4 then  -- Only show dungeons with at least 4 matching members
-            local dungeonEntry = content:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-            dungeonEntry:SetPoint("TOP", content, "TOP", 0, yOffset)
-            dungeonEntry:SetWidth(210)
-            dungeonEntry:SetJustifyH("LEFT")
+            -- Create clickable button
+            local dungeonBtn = CreateFrame("Button", nil, content)
+            dungeonBtn:SetPoint("TOP", content, "TOP", 0, yOffset)
+            dungeonBtn:SetWidth(210)
+            dungeonBtn:SetHeight(16)
+            
+            -- Create text for the button
+            local btnText = dungeonBtn:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            btnText:SetPoint("LEFT", dungeonBtn, "LEFT", 0, 0)
+            btnText:SetWidth(210)
+            btnText:SetJustifyH("LEFT")
+            dungeonBtn:SetFontString(btnText)
             
             -- Color based on player level vs dungeon range
             local colorCode = "|cFFFFFFFF"  -- White (default)
@@ -2944,8 +3299,25 @@ function IGW:UpdateDungeonsPage()
             -- Format player count text
             local playerText = dungeon.score == 1 and "1 Player" or string.format("%d Players", dungeon.score)
             
-            dungeonEntry:SetText(string.format("%s%s|r (%d-%d) - |cFF888888%s|r", 
+            btnText:SetText(string.format("%s%s|r (%d-%d) - |cFF888888%s|r", 
                 colorCode, dungeon.name, dungeon.minLevel, dungeon.maxLevel, playerText))
+            
+            -- Highlight on hover
+            local highlight = dungeonBtn:CreateTexture(nil, "BACKGROUND")
+            highlight:SetAllPoints()
+            highlight:SetTexture(1, 1, 1, 0.1)
+            dungeonBtn:SetHighlightTexture(highlight)
+            
+            -- Store dungeon info directly on the button
+            dungeonBtn.dungeonName = dungeon.name
+            dungeonBtn.minLevel = dungeon.minLevel
+            dungeonBtn.maxLevel = dungeon.maxLevel
+            dungeonBtn.score = dungeon.score
+            
+            -- Click handler - show dungeon details dialog
+            dungeonBtn:SetScript("OnClick", function()
+                IGW:ShowDungeonDetails(this.dungeonName, this.minLevel, this.maxLevel, this.score)
+            end)
             
             yOffset = yOffset - 16
             displayed = displayed + 1
@@ -2963,6 +3335,132 @@ function IGW:UpdateDungeonsPage()
 end
 
 
+
+-- Show dungeon details dialog
+function IGW:ShowDungeonDetails(dungeonName, minLevel, maxLevel, score)
+    if not dungeonName or not DUNGEON_DETAILS[dungeonName] then return end
+    
+    local details = DUNGEON_DETAILS[dungeonName]
+    
+    -- Create or reuse dialog
+    if not IGW.dungeonDialog then
+        local dialog = CreateFrame("Frame", "IGW_DungeonDialog", UIParent)
+        dialog:SetWidth(350)
+        dialog:SetHeight(220)
+        dialog:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+        dialog:SetFrameStrata("DIALOG")
+        dialog:SetBackdrop({
+            bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+            edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+            tile = true,
+            tileSize = 32,
+            edgeSize = 32,
+            insets = { left = 11, right = 12, top = 12, bottom = 11 }
+        })
+        dialog:SetBackdropColor(0, 0, 0, 1)
+        dialog:EnableMouse(true)
+        dialog:SetMovable(true)
+        dialog:RegisterForDrag("LeftButton")
+        dialog:SetScript("OnDragStart", function() this:StartMoving() end)
+        dialog:SetScript("OnDragStop", function() this:StopMovingOrSizing() end)
+        
+        -- Background loading screen texture (scaled UP by 40% = 140% total)
+        local bgTexture = dialog:CreateTexture(nil, "BACKGROUND")
+        bgTexture:SetPoint("TOPLEFT", dialog, "TOPLEFT", 11, -12)
+        bgTexture:SetPoint("BOTTOMRIGHT", dialog, "BOTTOMRIGHT", -12, 11)
+        -- Crop the texture to show center portion at 140% zoom
+        -- To show center at 1.4x zoom, we need to show the middle 71.4% of the texture (1/1.4 = 0.714)
+        local cropAmount = (1 - (1 / 1.4)) / 2  -- 0.143 on each side
+        bgTexture:SetTexCoord(cropAmount, 1 - cropAmount, cropAmount, 1 - cropAmount)
+        dialog.bgTexture = bgTexture
+        
+        -- Dark overlay for readability
+        local overlay = dialog:CreateTexture(nil, "BORDER")
+        overlay:SetPoint("TOPLEFT", dialog, "TOPLEFT", 11, -12)
+        overlay:SetPoint("BOTTOMRIGHT", dialog, "BOTTOMRIGHT", -12, 11)
+        overlay:SetTexture(0, 0, 0, 0.7)
+        
+        -- Title
+        local title = dialog:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+        title:SetPoint("TOP", dialog, "TOP", 0, -20)
+        title:SetWidth(310)
+        dialog.title = title
+        
+        -- Location
+        local location = dialog:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        location:SetPoint("TOP", title, "BOTTOM", 0, -8)
+        location:SetWidth(310)
+        location:SetTextColor(0.8, 0.8, 0.8)
+        dialog.location = location
+        
+        -- Level range
+        local levelRange = dialog:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        levelRange:SetPoint("TOP", location, "BOTTOM", 0, -10)
+        levelRange:SetWidth(310)
+        dialog.levelRange = levelRange
+        
+        -- Player count
+        local playerCount = dialog:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        playerCount:SetPoint("TOP", levelRange, "BOTTOM", 0, -5)
+        playerCount:SetWidth(310)
+        playerCount:SetTextColor(0.5, 1.0, 0.5)
+        dialog.playerCount = playerCount
+        
+        -- Description
+        local desc = dialog:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        desc:SetPoint("TOP", playerCount, "BOTTOM", 0, -15)
+        desc:SetWidth(310)
+        desc:SetJustifyH("LEFT")
+        desc:SetTextColor(1, 1, 1)
+        dialog.desc = desc
+        
+        -- Bosses label
+        local bossesLabel = dialog:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+        bossesLabel:SetPoint("TOPLEFT", desc, "BOTTOMLEFT", 0, -15)
+        bossesLabel:SetWidth(310)
+        bossesLabel:SetText("Bosses:")
+        bossesLabel:SetTextColor(1, 0.82, 0)
+        
+        -- Bosses
+        local bosses = dialog:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        bosses:SetPoint("TOP", bossesLabel, "BOTTOM", 0, -5)
+        bosses:SetWidth(310)
+        bosses:SetJustifyH("LEFT")
+        bosses:SetTextColor(0.9, 0.9, 0.9)
+        dialog.bosses = bosses
+        
+        -- Close button
+        local closeBtn = CreateFrame("Button", nil, dialog, "UIPanelCloseButton")
+        closeBtn:SetPoint("TOPRIGHT", dialog, "TOPRIGHT", -5, -5)
+        
+        dialog:Hide()
+        IGW.dungeonDialog = dialog
+    end
+    
+    local dialog = IGW.dungeonDialog
+    
+    -- Update loading screen background
+    local texture = DUNGEON_TEXTURES[dungeonName]
+    if texture then
+        dialog.bgTexture:SetTexture(texture)
+    else
+        -- Fallback to solid black if no texture found
+        dialog.bgTexture:SetTexture(0, 0, 0, 1)
+    end
+    
+    -- Update dialog content
+    dialog.title:SetText(dungeonName)
+    dialog.location:SetText(details.location .. " (" .. details.faction .. ")")
+    dialog.levelRange:SetText("Levels: " .. minLevel .. "-" .. maxLevel)
+    
+    local playerText = score == 1 and "1 player online" or score .. " players online"
+    dialog.playerCount:SetText(playerText)
+    
+    dialog.desc:SetText(details.description)
+    dialog.bosses:SetText(details.bosses)
+    
+    dialog:Show()
+end
 
 -- Toggle Guild Info window (left-side companion window; empty for now)
 function IGW:ToggleGuildInfoWindow()
