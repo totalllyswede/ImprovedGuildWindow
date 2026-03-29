@@ -252,9 +252,25 @@ Works bidirectionally - view any character to see their alts and main.
 
 ## Version
 
-**3.0** - Latest stable release
+**3.1** - Latest stable release
 
 ### Changelog
+
+**3.1**
+- Added clickable dungeon names on Guild Info Page 4
+- Dungeon details popup window with:
+  - Full dungeon names (e.g., "Scarlet Monastery - Graveyard")
+  - Location and faction information
+  - Level range and online player count
+  - Dungeon description and boss list
+  - Loading screen backgrounds (175% zoom, 35% overlay)
+  - Kalimdor fallback background for custom dungeons
+- Enhanced race code system:
+  - Added 2-letter race codes (Hu-, NE-, Dw-, Un-, Or-, Tr-, Gn-)
+  - Backwards compatible with 1-letter codes
+  - Case-insensitive support
+- Dungeon dialog closes with ESC key or when main window closes
+- All text centered in dungeon info window
 
 **3.0**
 - Removed all Calendar features (experimental features discontinued)

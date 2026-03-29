@@ -2,7 +2,7 @@
 -- Author: Travis
 
 local IGW = {}
-IGW.VERSION = "3.0"
+IGW.VERSION = "3.1"
 
 -- Global function for keybind (must be defined early)
 function ImprovedGuildWindow_Toggle()
@@ -297,6 +297,19 @@ local DUNGEON_TEXTURES = {
     ["Stratholme"] = "Interface\\Glues\\LoadingScreens\\LoadScreenStratholme"
 }
 
+-- Dungeon full display names
+local DUNGEON_FULL_NAMES = {
+    ["SM-Graveyard"] = "Scarlet Monastery - Graveyard",
+    ["SM-Library"] = "Scarlet Monastery - Library",
+    ["SM-Armory"] = "Scarlet Monastery - Armory",
+    ["SM-Cathedral"] = "Scarlet Monastery - Cathedral",
+    ["LBRS"] = "Lower Blackrock Spire",
+    ["UBRS"] = "Upper Blackrock Spire"
+}
+
+-- Default loading screen for dungeons without custom backgrounds
+local DEFAULT_LOADING_SCREEN = "Interface\\Glues\\LoadingScreens\\LoadScreenKalimdor"
+
 -- Timezone to region mapping
 local TIMEZONE_REGIONS = {
     -- Americas
@@ -589,6 +602,10 @@ function IGW:CreateMainFrame()
         -- Close options window
         if IGW.optionsFrame then
             IGW.optionsFrame:Hide()
+        end
+        -- Close dungeon details dialog
+        if IGW.dungeonDialog then
+            IGW.dungeonDialog:Hide()
         end
     end)
     
@@ -2637,6 +2654,10 @@ function IGW:ToggleWindow()
         if IGW.infoFrame then
             IGW.infoFrame:Hide()
         end
+        -- Close dungeon details dialog when main window closes
+        if IGW.dungeonDialog then
+            IGW.dungeonDialog:Hide()
+        end
     else
         if IsInGuild() then
             GuildRoster()
@@ -3364,21 +3385,21 @@ function IGW:ShowDungeonDetails(dungeonName, minLevel, maxLevel, score)
         dialog:SetScript("OnDragStart", function() this:StartMoving() end)
         dialog:SetScript("OnDragStop", function() this:StopMovingOrSizing() end)
         
-        -- Background loading screen texture (scaled UP by 40% = 140% total)
+        -- Background loading screen texture (scaled UP by 75% = 175% total)
         local bgTexture = dialog:CreateTexture(nil, "BACKGROUND")
         bgTexture:SetPoint("TOPLEFT", dialog, "TOPLEFT", 11, -12)
         bgTexture:SetPoint("BOTTOMRIGHT", dialog, "BOTTOMRIGHT", -12, 11)
-        -- Crop the texture to show center portion at 140% zoom
-        -- To show center at 1.4x zoom, we need to show the middle 71.4% of the texture (1/1.4 = 0.714)
-        local cropAmount = (1 - (1 / 1.4)) / 2  -- 0.143 on each side
+        -- Crop the texture to show center portion at 175% zoom
+        -- To show center at 1.75x zoom, we need to show the middle 57.1% of the texture (1/1.75 = 0.571)
+        local cropAmount = (1 - (1 / 1.75)) / 2  -- 0.214 on each side
         bgTexture:SetTexCoord(cropAmount, 1 - cropAmount, cropAmount, 1 - cropAmount)
         dialog.bgTexture = bgTexture
         
-        -- Dark overlay for readability
+        -- Dark overlay for readability (35% opacity)
         local overlay = dialog:CreateTexture(nil, "BORDER")
         overlay:SetPoint("TOPLEFT", dialog, "TOPLEFT", 11, -12)
         overlay:SetPoint("BOTTOMRIGHT", dialog, "BOTTOMRIGHT", -12, 11)
-        overlay:SetTexture(0, 0, 0, 0.7)
+        overlay:SetTexture(0, 0, 0, 0.35)
         
         -- Title
         local title = dialog:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
@@ -3410,13 +3431,13 @@ function IGW:ShowDungeonDetails(dungeonName, minLevel, maxLevel, score)
         local desc = dialog:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
         desc:SetPoint("TOP", playerCount, "BOTTOM", 0, -15)
         desc:SetWidth(310)
-        desc:SetJustifyH("LEFT")
+        desc:SetJustifyH("CENTER")
         desc:SetTextColor(1, 1, 1)
         dialog.desc = desc
         
         -- Bosses label
         local bossesLabel = dialog:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-        bossesLabel:SetPoint("TOPLEFT", desc, "BOTTOMLEFT", 0, -15)
+        bossesLabel:SetPoint("TOP", desc, "BOTTOM", 0, -15)
         bossesLabel:SetWidth(310)
         bossesLabel:SetText("Bosses:")
         bossesLabel:SetTextColor(1, 0.82, 0)
@@ -3425,13 +3446,16 @@ function IGW:ShowDungeonDetails(dungeonName, minLevel, maxLevel, score)
         local bosses = dialog:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
         bosses:SetPoint("TOP", bossesLabel, "BOTTOM", 0, -5)
         bosses:SetWidth(310)
-        bosses:SetJustifyH("LEFT")
+        bosses:SetJustifyH("CENTER")
         bosses:SetTextColor(0.9, 0.9, 0.9)
         dialog.bosses = bosses
         
         -- Close button
         local closeBtn = CreateFrame("Button", nil, dialog, "UIPanelCloseButton")
         closeBtn:SetPoint("TOPRIGHT", dialog, "TOPRIGHT", -5, -5)
+        
+        -- Make ESC key close the dialog
+        table.insert(UISpecialFrames, "IGW_DungeonDialog")
         
         dialog:Hide()
         IGW.dungeonDialog = dialog
@@ -3440,16 +3464,15 @@ function IGW:ShowDungeonDetails(dungeonName, minLevel, maxLevel, score)
     local dialog = IGW.dungeonDialog
     
     -- Update loading screen background
-    local texture = DUNGEON_TEXTURES[dungeonName]
-    if texture then
-        dialog.bgTexture:SetTexture(texture)
-    else
-        -- Fallback to solid black if no texture found
-        dialog.bgTexture:SetTexture(0, 0, 0, 1)
-    end
+    -- First clear any existing texture, then set new one
+    local texture = DUNGEON_TEXTURES[dungeonName] or DEFAULT_LOADING_SCREEN
+    dialog.bgTexture:SetTexture(texture)
+    
+    -- Get full display name if available
+    local displayName = DUNGEON_FULL_NAMES[dungeonName] or dungeonName
     
     -- Update dialog content
-    dialog.title:SetText(dungeonName)
+    dialog.title:SetText(displayName)
     dialog.location:SetText(details.location .. " (" .. details.faction .. ")")
     dialog.levelRange:SetText("Levels: " .. minLevel .. "-" .. maxLevel)
     
