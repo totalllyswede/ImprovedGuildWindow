@@ -3,8 +3,7 @@
 ## Notes: Enhanced guild management for World of Warcraft 1.12.1 (Turtle WoW)
 ## Author: Olzon
 ## Version: 3.1
-## SavedVariables: ImprovedGuildWindowDB, IGW_SyncDB
+## SavedVariables: ImprovedGuildWindowDB
 
 Bindings.xml
-IGW_Sync.lua
 ImprovedGuildWindow.lua
