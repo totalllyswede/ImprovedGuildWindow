@@ -27,6 +27,18 @@ local currentTab = "details"
 -- Default: 2 (includes Guild Master and top 2 officer ranks)
 local OFFICER_RANK_THRESHOLD = 2
 
+-- Check if current player is an officer
+function IGW:IsOfficer()
+    local playerName = UnitName("player")
+    for i = 1, GetNumGuildMembers(true) do
+        local name, rank, rankIndex = GetGuildRosterInfo(i)
+        if name == playerName then
+            return rankIndex <= OFFICER_RANK_THRESHOLD
+        end
+    end
+    return false
+end
+
 -- Timezone lookup table
 local TIMEZONES = {
     PST = "PST (UTC-8)",
@@ -53,217 +65,217 @@ local DUNGEON_DETAILS = {
     ["Ragefire Chasm"] = {
         location = "Orgrimmar",
         faction = "Horde",
-        description = "A volcanic chasm beneath Orgrimmar inhabited by troggs and cultists.",
+        description = "Volcanic caverns beneath Orgrimmar infested with troggs. The Burning Blade cult has taken refuge in the fiery depths, threatening Durotar's sovereignty.",
         bosses = "Taragaman the Hungerer, Jergosh the Invoker",
         notable = "Cloth, Fire resist gear"
     },
     ["The Deadmines"] = {
         location = "Westfall",
         faction = "Alliance",
-        description = "An abandoned mine overrun by the Defias Brotherhood.",
+        description = "Abandoned gold mine claimed by the Defias Brotherhood. Edwin VanCleef and his brigands use the labyrinth as their base of operations against Stormwind.",
         bosses = "Edwin VanCleef, Sneed, Mr. Smite",
         notable = "Cruel Barb, Smite's Hammer"
     },
     ["Wailing Caverns"] = {
         location = "Northern Barrens",
         faction = "Neutral",
-        description = "Twisted caverns corrupted by druids of the Fang.",
+        description = "Druid Naralex's vision of restoring the Barrens turned into a nightmare. The caverns are now twisted by corruption, home to deviant creatures and the sleeping Naralex.",
         bosses = "Lady Anacondra, Lord Pythas, Mutanus",
         notable = "Armor of the Fang set, Glowing Lizardscale Cloak"
     },
     ["Stockades"] = {
         location = "Stormwind City",
         faction = "Alliance",
-        description = "The prison of Stormwind, now controlled by rioting prisoners.",
+        description = "Stormwind's high-security prison has been overrun by rioting inmates. The violent criminals have taken control and must be stopped.",
         bosses = "Bazil Thredd, Dextren Ward",
         notable = "Prison variety loot"
     },
     ["Blackfathom Deeps"] = {
         location = "Ashenvale",
         faction = "Neutral",
-        description = "Sunken temple ruins inhabited by naga and corrupted creatures.",
+        description = "Ancient temple once dedicated to Elune, lost beneath the sea during the Sundering. Twilight's Hammer cultists now protect an Old God's cherished creature within.",
         bosses = "Gelihast, Lady Sarevess, Aku'mai",
         notable = "Blackfathom Mana Oil, Strike of the Hydra"
     },
     ["Dragonmaw Retreat"] = {
         location = "Wetlands (Turtle WoW)",
         faction = "Neutral",
-        description = "Former stronghold of the Dragonmaw clan.",
+        description = "Ancient dwarven mining caverns beneath Grim Batol, now a Dragonmaw base. The clan wields a shard of the Demon Soul to control red dragons and reclaim the Wetlands.",
         bosses = "Various Dragonmaw leaders",
         notable = "Custom Turtle WoW dungeon"
     },
     ["SM-Graveyard"] = {
         location = "Tirisfal Glades",
         faction = "Neutral",
-        description = "Scarlet Monastery Graveyard wing, haunted by the undead.",
+        description = "The Scarlet Crusade's burial grounds, now haunted by the very undead they fought. Zealots and restless spirits guard the graveyard.",
         bosses = "Interrogator Vishas, Bloodmage Thalnos",
         notable = "Scarlet gear, good XP"
     },
     ["Gnomeregan"] = {
         location = "Dun Morogh",
         faction = "Alliance",
-        description = "The fallen capital of the gnomes, irradiated and overrun by troggs.",
+        description = "Once a marvel of gnomish engineering, now a radioactive nightmare. Troggs and crazed leper gnomes infest the irradiated halls of this fallen city.",
         bosses = "Mekgineer Thermaplugg, Crowd Pummeler 9-60",
         notable = "Electrocutioner Leg, Triprunner Dungarees"
     },
     ["Crescent Grove"] = {
-        location = "Feralas (Turtle WoW)",
+        location = "Ashenvale (Turtle WoW)",
         faction = "Neutral",
-        description = "Ancient druidic grove with moonkin and satyr.",
+        description = "Once a peaceful druid retreat, now corrupted by Burning Legion forces. Doomguard Master Raxxieth leads the demonic invasion of this sacred grove.",
         bosses = "Various nature guardians",
         notable = "Custom Turtle WoW dungeon"
     },
     ["SM-Library"] = {
         location = "Tirisfal Glades",
         faction = "Neutral",
-        description = "Scarlet Monastery Library wing filled with zealots and undead.",
+        description = "Repository of the Scarlet Crusade's knowledge and magical artifacts. Fanatical zealots guard tomes of forgotten lore.",
         bosses = "Arcanist Doan, Houndmaster Loksey",
         notable = "Illusionary Rod, Hypnotic Blade"
     },
     ["Razorfen Kraul"] = {
         location = "Southern Barrens",
         faction = "Neutral",
-        description = "Twisting bramble-filled tunnels home to quilboar.",
+        description = "Sacred quilboar den built where the demigod Agamaggan fell. Massive thorn vines twist through the underground warren.",
         bosses = "Charlga Razorflank, Agathelos",
         notable = "Corpsemaker, Razorfen Spaulders"
     },
     ["Stormwrought Ruins"] = {
-        location = "Azshara (Turtle WoW)",
+        location = "Balor (Turtle WoW)",
         faction = "Neutral",
-        description = "Ancient naga ruins crackling with arcane energy.",
+        description = "Duke Balor's fortress seized by the Stormreaver Clan and Shadow Council. Ghosts, demons, and cultists haunt the pitch-black halls of this derelict castle.",
         bosses = "Various naga champions",
         notable = "Custom Turtle WoW dungeon"
     },
     ["SM-Armory"] = {
         location = "Tirisfal Glades",
         faction = "Neutral",
-        description = "Scarlet Monastery Armory, training ground for Scarlet warriors.",
+        description = "Training grounds where the Scarlet Crusade forges its warriors. Herod the Bully oversees brutal combat drills.",
         bosses = "Herod the Bully",
         notable = "Ravager, Scarlet Leggings"
     },
     ["SM-Cathedral"] = {
         location = "Tirisfal Glades",
         faction = "Neutral",
-        description = "Scarlet Monastery Cathedral, seat of the Scarlet High Command.",
+        description = "Grand cathedral and seat of Scarlet power. High Inquisitor Whitemane and Commander Mograine lead the fanatic crusade.",
         bosses = "High Inquisitor Whitemane, Scarlet Commander Mograine",
         notable = "Whitemane's Chapeau, Mograine's Might"
     },
     ["Uldaman"] = {
         location = "Badlands",
         faction = "Neutral",
-        description = "Ancient titan vault filled with troggs, dwarves, and stone constructs.",
+        description = "Ancient titan vault holding arcane secrets from ages past. Troggs, dwarves, and powerful stone constructs guard the depths.",
         bosses = "Archaedas, Ironaya, Galgann Firehammer",
         notable = "The Rockpounder, Archaedic Stone"
     },
     ["Razorfen Downs"] = {
         location = "Southern Barrens",
         faction = "Neutral",
-        description = "Death-knight controlled quilboar city serving the Scourge.",
+        description = "Quilboar city overtaken by the Scourge and undead forces. Amnennar the Coldbringer raises an army of death.",
         bosses = "Amnennar the Coldbringer, Tuten'kash",
         notable = "Shoulder of the Fallen Crusader, Ebon Vise"
     },
     ["Gilneas City"] = {
         location = "Gilneas (Turtle WoW)",
         faction = "Neutral",
-        description = "Fallen city overrun by worgen and dark forces.",
+        description = "The walled city of Gilneas, abandoned and overrun by worgen. King Genn Greymane's former kingdom now crawls with cursed beasts.",
         bosses = "Various worgen alphas",
         notable = "Custom Turtle WoW dungeon"
     },
     ["Maraudon"] = {
         location = "Desolace",
         faction = "Neutral",
-        description = "Massive underground cavern complex with corrupted earth elementals.",
+        description = "Burial place of Zaetar, son of Cenarius, where Princess Theradras grieves. Centaurs and noxious elementals fill the corrupted caverns.",
         bosses = "Princess Theradras, Celebras, Noxxion",
         notable = "Blackstone Ring, Nature Resist gear"
     },
     ["Zul'Farrak"] = {
         location = "Tanaris",
         faction = "Neutral",
-        description = "Ancient troll city buried in the desert sands.",
+        description = "Ancient troll city of the Sandfury tribe, buried in desert sands. Rumors tell of an ancient creature sleeping within that threatens all of Tanaris.",
         bosses = "Chief Ukorz Sandscalp, Gahz'rilla",
         notable = "Sul'thraze, Lifeforce Dirk"
     },
     ["Sunken Temple"] = {
         location = "Swamp of Sorrows",
         faction = "Neutral",
-        description = "Temple of Atal'Hakkar, sunken ruin of troll worship.",
+        description = "Temple of Atal'Hakkar, built by exiled Gurubashi priests attempting to summon Hakkar. The cursed temple now lies sunken in the swamp.",
         bosses = "Avatar of Hakkar, Shade of Eranikus",
         notable = "Drakestone, Eranikus' Fang"
     },
     ["Blackrock Depths"] = {
         location = "Blackrock Mountain",
         faction = "Neutral",
-        description = "Massive dark iron dwarf city inside Blackrock Mountain.",
+        description = "Smoldering fortress city of the Dark Iron dwarves deep within Blackrock Mountain. Emperor Dagran Thaurissan rules from his throne of fire.",
         bosses = "Emperor Dagran Thaurissan, General Angerforge",
         notable = "Hand of Justice, Ironfoe"
     },
     ["Hateforge Quarry"] = {
         location = "Blackrock Mountain (Turtle WoW)",
         faction = "Neutral",
-        description = "Dark iron mining operation with enslaved workers.",
+        description = "Dark Iron mining operations deep beneath Blackrock Mountain. Enslaved workers toil endlessly extracting precious ore for the Dark Irons.",
         bosses = "Various dark iron overseers",
         notable = "Custom Turtle WoW dungeon"
     },
     ["Dire Maul West"] = {
         location = "Feralas",
         faction = "Neutral",
-        description = "Western gardens of the fallen night elf city.",
+        description = "Overgrown gardens of the ancient night elf city Eldre'Thalas. Prince Tortheldrin and his corrupted guards haunt the ruins.",
         bosses = "Tendris Warpwood, Immol'thar, Prince Tortheldrin",
         notable = "Warpwood Binding, Dreadmist Belt"
     },
     ["Dire Maul East"] = {
         location = "Feralas",
         faction = "Neutral",
-        description = "Eastern section overrun by demons and imps.",
+        description = "Demon-infested eastern wing of the fallen Kaldorei city. Satyr and imps swarm the corrupted halls.",
         bosses = "Alzzin the Wildshaper, Isalien",
         notable = "Felhide Cap, Energized Chestplate"
     },
     ["LBRS"] = {
         location = "Blackrock Mountain",
         faction = "Neutral",
-        description = "Lower Blackrock Spire, home to the Dark Horde.",
+        description = "Lower levels of Blackrock Spire controlled by the Dark Horde. Orcs and their allies prepare for war in the shadowy halls.",
         bosses = "General Drakkisath, War Master Voone",
         notable = "Truestrike Shoulders, Dal'Rend's set"
     },
     ["Dire Maul North"] = {
         location = "Feralas",
         faction = "Neutral",
-        description = "Northern wing featuring tribute runs and King Gordok.",
+        description = "Northern wing ruled by King Gordok and his ogre clan. Adventurers seek tribute runs for powerful buffs.",
         bosses = "King Gordok, Cho'Rush the Observer",
         notable = "Tribute buffs, Ogre Tannin"
     },
     ["Scholomance"] = {
         location = "Western Plaguelands",
         faction = "Neutral",
-        description = "Former school of necromancy, now Scourge stronghold.",
+        description = "Former school of necromancy transformed into a Scourge stronghold. Darkmaster Gandling conducts dark experiments in the cursed halls.",
         bosses = "Darkmaster Gandling, Ras Frostwhisper",
         notable = "Deathbone set, Necromancy books"
     },
     ["Stratholme"] = {
         location = "Eastern Plaguelands",
         faction = "Neutral",
-        description = "Plagued city divided between Scourge and Scarlet forces.",
+        description = "Once-proud city now torn between Scourge and Scarlet Crusade forces. Baron Rivendare commands the undead from the plagued streets.",
         bosses = "Baron Rivendare, Ramstein, Balnazzar",
         notable = "Deathcharger's Reins, Runeblade of Baron Rivendare"
     },
     ["UBRS"] = {
         location = "Blackrock Mountain",
         faction = "Neutral",
-        description = "Upper Blackrock Spire, lair of General Drakkisath.",
+        description = "Upper reaches of Blackrock Spire where General Drakkisath commands. The black dragonflight maintains a powerful presence.",
         bosses = "General Drakkisath, Rend Blackhand",
         notable = "Tier 0 upgrades, Dalrend's Sacred Charge"
     },
     ["Stormwind Vault"] = {
         location = "Stormwind City (Turtle WoW)",
         faction = "Alliance",
-        description = "The royal treasury, infiltrated by thieves.",
+        description = "The royal treasury beneath Stormwind has been breached by master thieves. The kingdom's wealth is under siege from within.",
         bosses = "Various elite robbers",
         notable = "Custom Turtle WoW dungeon"
     },
     ["Karazhan Crypt"] = {
         location = "Deadwind Pass (Turtle WoW)",
         faction = "Neutral",
-        description = "Crypts beneath Karazhan filled with spirits and undead.",
+        description = "Ancient crypts beneath Medivh's tower, filled with restless spirits. The loyal castellan Moroes still guards the cursed halls.",
         bosses = "Various undead guardians",
         notable = "Custom Turtle WoW dungeon"
     }
@@ -464,6 +476,25 @@ function IGW:OnLoad()
     -- We'll initialize them in OnPlayerLogin when they're available
     self:RegisterEvents()
     
+    -- Register slash commands
+    SLASH_IGW1 = "/igw"
+    SLASH_IGW2 = "/improvedguildwindow"
+    SlashCmdList["IGW"] = function(msg)
+        IGW:HandleSlashCommand(msg)
+    end
+    
+    SLASH_IGWDEBUG1 = "/igwdebug"
+    SlashCmdList["IGWDEBUG"] = function(msg)
+        if IGW_Sync then
+            IGW_Sync.debugEnabled = not IGW_Sync.debugEnabled
+            if IGW_Sync.debugEnabled then
+                DEFAULT_CHAT_FRAME:AddMessage("|cff00ff00[IGW]|r Debug messages enabled")
+            else
+                DEFAULT_CHAT_FRAME:AddMessage("|cff00ff00[IGW]|r Debug messages disabled")
+            end
+        end
+    end
+    
     DEFAULT_CHAT_FRAME:AddMessage("|cFF00FF00Improved Guild Window loaded!|r")
     DEFAULT_CHAT_FRAME:AddMessage("|cFF00FF00Set keybind in ESC > Key Bindings > Improved Guild Window|r")
     DEFAULT_CHAT_FRAME:AddMessage("|cFF00FF00Or use /igw to open|r")
@@ -608,6 +639,33 @@ function IGW:CreateMainFrame()
             IGW.dungeonDialog:Hide()
         end
     end)
+    
+    -- New Guild Announcements button (top left corner)
+    local announcementBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+    announcementBtn:SetPoint("TOPLEFT", frame, "TOPLEFT", 15, -15)
+    announcementBtn:SetWidth(160)
+    announcementBtn:SetHeight(22)
+    announcementBtn:SetText("New Guild Announcements")
+    announcementBtn:SetFrameLevel(frame:GetFrameLevel() + 2)
+    announcementBtn:Hide() -- Hidden by default
+    
+    -- Glow/highlight effect
+    announcementBtn:SetBackdrop({
+        bgFile = "Interface\\Tooltips\\UI-Tooltip-Background",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        tile = true, tileSize = 16, edgeSize = 16,
+        insets = { left = 4, right = 4, top = 4, bottom = 4 }
+    })
+    announcementBtn:SetBackdropColor(0.2, 0.6, 1, 0.3)
+    announcementBtn:SetBackdropBorderColor(0.4, 0.8, 1, 1)
+    
+    announcementBtn:SetScript("OnClick", function()
+        -- Open guild info window to page 5
+        IGW:OpenGuildInfoToPage5()
+        this:Hide()
+    end)
+    
+    frame.announcementBtn = announcementBtn
     
     -- Options button (standard button, anchored to left of close button)
     local optionsBtn = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
@@ -2636,6 +2694,66 @@ function IGW:UpdateRosterDisplay()
 end
 
 -- Toggle window visibility
+-- Handle slash commands
+function IGW:HandleSlashCommand(msg)
+    msg = string.lower(msg or "")
+    
+    if msg == "" then
+        -- No arguments, just toggle window
+        self:ToggleWindow()
+    elseif msg == "help" then
+        DEFAULT_CHAT_FRAME:AddMessage("|cff00ff00[IGW]|r Commands:")
+        DEFAULT_CHAT_FRAME:AddMessage("  /igw - Toggle guild window")
+        DEFAULT_CHAT_FRAME:AddMessage("  /igw help - Show this help")
+        DEFAULT_CHAT_FRAME:AddMessage("  /igw sync - Show sync status")
+        DEFAULT_CHAT_FRAME:AddMessage("  /igw sync refresh - Rescan for addon users")
+        DEFAULT_CHAT_FRAME:AddMessage("  /igwdebug - Toggle sync debug messages")
+    elseif msg == "sync" or msg == "sync status" then
+        -- Show sync status
+        if IGW_Sync then
+            local status = IGW_Sync:GetSyncStatus()
+            DEFAULT_CHAT_FRAME:AddMessage("|cff00ff00[IGW Sync]|r Status:")
+            DEFAULT_CHAT_FRAME:AddMessage("  Peers online: " .. status.peers)
+            DEFAULT_CHAT_FRAME:AddMessage("  Announcements: " .. status.announcements)
+            
+            -- Show schedule status
+            local hasSchedule = not IGW_Sync:IsScheduleEmpty()
+            DEFAULT_CHAT_FRAME:AddMessage("  Raid schedule: " .. (hasSchedule and "Loaded" or "Empty"))
+            
+            -- Show peer list
+            if status.peers > 0 then
+                DEFAULT_CHAT_FRAME:AddMessage("  Connected to:")
+                for name, peer in pairs(IGW_Sync.data.peers) do
+                    DEFAULT_CHAT_FRAME:AddMessage("    " .. name .. " (v" .. peer.version .. ")")
+                end
+            end
+        else
+            DEFAULT_CHAT_FRAME:AddMessage("|cffff0000[IGW]|r Sync module not loaded")
+        end
+    elseif msg == "sync refresh" or msg == "rescan" then
+        -- Rescan for peers
+        if IGW_Sync then
+            IGW_Sync:SendHandshake()
+            DEFAULT_CHAT_FRAME:AddMessage("|cff00ff00[IGW Sync]|r Rescanning for addon users...")
+        else
+            DEFAULT_CHAT_FRAME:AddMessage("|cffff0000[IGW]|r Sync module not loaded")
+        end
+    elseif msg == "debug" then
+        -- Toggle debug (alternative to /igwdebug)
+        if IGW_Sync then
+            IGW_Sync.debugEnabled = not IGW_Sync.debugEnabled
+            if IGW_Sync.debugEnabled then
+                DEFAULT_CHAT_FRAME:AddMessage("|cff00ff00[IGW]|r Debug messages enabled")
+            else
+                DEFAULT_CHAT_FRAME:AddMessage("|cff00ff00[IGW]|r Debug messages disabled")
+            end
+        end
+    else
+        -- Unknown command, just toggle window
+        self:ToggleWindow()
+    end
+end
+
 function IGW:ToggleWindow()
     if frame:IsVisible() then
         frame:Hide()
@@ -2658,6 +2776,14 @@ function IGW:ToggleWindow()
         if IGW.dungeonDialog then
             IGW.dungeonDialog:Hide()
         end
+        -- Close raid schedule editor when main window closes
+        if IGW.raidScheduleDialog then
+            IGW.raidScheduleDialog:Hide()
+        end
+        -- Close announcement dialog when main window closes
+        if IGW.announcementDialog then
+            IGW.announcementDialog:Hide()
+        end
     else
         if IsInGuild() then
             GuildRoster()
@@ -2669,6 +2795,9 @@ function IGW:ToggleWindow()
             self:SwitchTab(defaultTab)
             frame:Show()
             self:UpdateRosterDisplay()
+            
+            -- Check for new announcements
+            self:CheckForNewAnnouncements()
             
             -- Restore remembered windows if enabled
             if ImprovedGuildWindowDB and ImprovedGuildWindowDB.rememberWindows and ImprovedGuildWindowDB.windowStates then
@@ -3399,7 +3528,7 @@ function IGW:ShowDungeonDetails(dungeonName, minLevel, maxLevel, score)
         local overlay = dialog:CreateTexture(nil, "BORDER")
         overlay:SetPoint("TOPLEFT", dialog, "TOPLEFT", 11, -12)
         overlay:SetPoint("BOTTOMRIGHT", dialog, "BOTTOMRIGHT", -12, 11)
-        overlay:SetTexture(0, 0, 0, 0.35)
+        overlay:SetTexture(0, 0, 0, 0.3)
         
         -- Title
         local title = dialog:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
@@ -3486,6 +3615,91 @@ function IGW:ShowDungeonDetails(dungeonName, minLevel, maxLevel, score)
 end
 
 -- Toggle Guild Info window (left-side companion window; empty for now)
+-- Open guild info window directly to page 5 (announcements)
+function IGW:OpenGuildInfoToPage5()
+    if not frame then return end
+    
+    -- Ensure guild info window is created
+    if not IGW.infoFrame then
+        self:ToggleGuildInfoWindow()
+    end
+    
+    -- Show guild info if hidden
+    if not IGW.infoFrame:IsVisible() then
+        self:ToggleGuildInfoWindow()
+    end
+    
+    -- Navigate to page 5
+    local gf = IGW.infoFrame
+    if gf then
+        gf.currentPage = 5
+        gf.content:Hide()
+        gf.content2:Hide()
+        gf.content3:Hide()
+        gf.content4:Hide()
+        gf.content5:Show()
+        self:UpdateEventsPage()
+        gf.pageIndicator:SetText("Page 5 / 5")
+        
+        -- Highlight Guild Info tab
+        if frame.tab4 then
+            frame.tab4:SetBackdropColor(0.3, 0.3, 0.5, 1)
+            frame.tab4Text:SetTextColor(1, 1, 1)
+        end
+        
+        -- Mark announcements as read
+        self:MarkAnnouncementsAsRead()
+    end
+end
+
+-- Mark announcements as read
+function IGW:MarkAnnouncementsAsRead()
+    if IGW_Sync and IGW_Sync.data and IGW_Sync.data.announcements then
+        -- Store the timestamp of the last announcement
+        if table.getn(IGW_Sync.data.announcements) > 0 then
+            local lastAnn = IGW_Sync.data.announcements[1] -- Most recent
+            local lastTimestamp = tonumber(lastAnn.timestamp) or 0
+            local savedTimestamp = tonumber(ImprovedGuildWindowDB.lastReadAnnouncement) or 0
+            
+            if savedTimestamp < lastTimestamp then
+                ImprovedGuildWindowDB.lastReadAnnouncement = lastTimestamp
+            end
+        end
+        
+        -- Hide the notification button
+        if frame and frame.announcementBtn then
+            frame.announcementBtn:Hide()
+        end
+    end
+end
+
+-- Check for new announcements
+function IGW:CheckForNewAnnouncements()
+    if not frame or not frame.announcementBtn then return end
+    if not IGW_Sync or not IGW_Sync.data or not IGW_Sync.data.announcements then
+        frame.announcementBtn:Hide()
+        return
+    end
+    
+    -- Check if there are any announcements newer than last read
+    local hasNew = false
+    local lastRead = tonumber(ImprovedGuildWindowDB.lastReadAnnouncement) or 0
+    
+    for _, ann in ipairs(IGW_Sync.data.announcements) do
+        if ann.timestamp and tonumber(ann.timestamp) and tonumber(ann.timestamp) > lastRead then
+            hasNew = true
+            break
+        end
+    end
+    
+    -- Show/hide button based on new announcements
+    if hasNew and frame:IsVisible() then
+        frame.announcementBtn:Show()
+    else
+        frame.announcementBtn:Hide()
+    end
+end
+
 function IGW:ToggleGuildInfoWindow()
     if not frame then return end
 
@@ -3753,6 +3967,17 @@ dungeonsContent:SetPoint("TOPRIGHT", dungeonsInstruction, "BOTTOMRIGHT", 0, -8)
 dungeonsContent:SetPoint("BOTTOM", content4, "BOTTOM", 0, 50)
 gf.dungeonsContent = dungeonsContent
 
+-- Page 5 content frame (hidden by default)
+local content5 = CreateFrame("Frame", nil, gf)
+content5:SetPoint("TOPLEFT", gf, "TOPLEFT", 20, -50)
+content5:SetPoint("BOTTOMRIGHT", gf, "BOTTOMRIGHT", -20, 50)
+content5:Hide()
+gf.content5 = content5
+
+-- Page 5 will be populated by IGW:UpdateEventsPage()
+gf.eventsScrollFrame = nil
+gf.eventsContent = nil
+
 -- Pagination buttons at bottom (match tab button styling)
 local buttonHeight = 25  -- Match tab button height
 local prevBtn = CreateFrame("Button", nil, gf, "UIPanelButtonTemplate")
@@ -3767,22 +3992,34 @@ prevBtn:SetScript("OnClick", function()
         gf.content2:Hide()
         gf.content3:Hide()
         gf.content4:Hide()
-        gf.pageIndicator:SetText("Page 1 / 4")
+        gf.content5:Hide()
+        gf.pageIndicator:SetText("Page 1 / 5")
     elseif gf.currentPage == 3 then
         gf.currentPage = 2
         gf.content:Hide()
         gf.content2:Show()
         gf.content3:Hide()
         gf.content4:Hide()
-        gf.pageIndicator:SetText("Page 2 / 4")
+        gf.content5:Hide()
+        gf.pageIndicator:SetText("Page 2 / 5")
     elseif gf.currentPage == 4 then
         gf.currentPage = 3
         gf.content:Hide()
         gf.content2:Hide()
         gf.content3:Show()
         gf.content4:Hide()
+        gf.content5:Hide()
         IGW:UpdateCraftersPage()
-        gf.pageIndicator:SetText("Page 3 / 4")
+        gf.pageIndicator:SetText("Page 3 / 5")
+    elseif gf.currentPage == 5 then
+        gf.currentPage = 4
+        gf.content:Hide()
+        gf.content2:Hide()
+        gf.content3:Hide()
+        gf.content4:Show()
+        gf.content5:Hide()
+        IGW:UpdateDungeonsPage()
+        gf.pageIndicator:SetText("Page 4 / 5")
     end
 end)
 gf.prevBtn = prevBtn
@@ -3799,23 +4036,35 @@ nextBtn:SetScript("OnClick", function()
         gf.content2:Show()
         gf.content3:Hide()
         gf.content4:Hide()
-        gf.pageIndicator:SetText("Page 2 / 4")
+        gf.content5:Hide()
+        gf.pageIndicator:SetText("Page 2 / 5")
     elseif gf.currentPage == 2 then
         gf.currentPage = 3
         gf.content:Hide()
         gf.content2:Hide()
         gf.content3:Show()
         gf.content4:Hide()
+        gf.content5:Hide()
         IGW:UpdateCraftersPage()
-        gf.pageIndicator:SetText("Page 3 / 4")
+        gf.pageIndicator:SetText("Page 3 / 5")
     elseif gf.currentPage == 3 then
         gf.currentPage = 4
         gf.content:Hide()
         gf.content2:Hide()
         gf.content3:Hide()
         gf.content4:Show()
+        gf.content5:Hide()
         IGW:UpdateDungeonsPage()
-        gf.pageIndicator:SetText("Page 4 / 4")
+        gf.pageIndicator:SetText("Page 4 / 5")
+    elseif gf.currentPage == 4 then
+        gf.currentPage = 5
+        gf.content:Hide()
+        gf.content2:Hide()
+        gf.content3:Hide()
+        gf.content4:Hide()
+        gf.content5:Show()
+        IGW:UpdateEventsPage()
+        gf.pageIndicator:SetText("Page 5 / 5")
     end
 end)
 gf.nextBtn = nextBtn
@@ -3823,7 +4072,7 @@ gf.nextBtn = nextBtn
 -- Page indicator (vertically centered with buttons)
 local pageIndicator = gf:CreateFontString(nil, "OVERLAY", "GameFontNormal")
 pageIndicator:SetPoint("BOTTOM", gf, "BOTTOM", 0, 15 + (buttonHeight / 2))
-pageIndicator:SetText("Page 1 / 4")
+pageIndicator:SetText("Page 1 / 5")
 gf.pageIndicator = pageIndicator
 
 -- Initialize to page 1
@@ -4311,6 +4560,103 @@ SLASH_IMPROVEDGUILDWINDOW1 = "/igw"
 SLASH_IMPROVEDGUILDWINDOW2 = "/improvedguild"
 SlashCmdList["IMPROVEDGUILDWINDOW"] = function(msg)
     msg = string.lower(msg or "")
+    
+    -- Sync status command
+    if msg == "sync status" then
+        if not IGW_Sync then
+            DEFAULT_CHAT_FRAME:AddMessage("|cffff0000[IGW]|r Sync module not loaded")
+            return
+        end
+        
+        local status = IGW_Sync:GetSyncStatus()
+        DEFAULT_CHAT_FRAME:AddMessage("|cff00ff00[IGW Sync Status]|r")
+        DEFAULT_CHAT_FRAME:AddMessage("  Connected peers: " .. status.peers)
+        DEFAULT_CHAT_FRAME:AddMessage("  Announcements: " .. status.announcements)
+        if status.lastSync > 0 then
+            DEFAULT_CHAT_FRAME:AddMessage("  Last sync: " .. date("%c", status.lastSync))
+        end
+        
+        -- Show peer details
+        if IGW_Sync.data and IGW_Sync.data.peers then
+            DEFAULT_CHAT_FRAME:AddMessage("|cff00ff00Peer Details:|r")
+            local now = time()
+            for name, peer in pairs(IGW_Sync.data.peers) do
+                local secondsAgo = now - (peer.lastSeen or 0)
+                DEFAULT_CHAT_FRAME:AddMessage("  " .. name .. " (v" .. (peer.version or "?") .. ") - seen " .. secondsAgo .. "s ago")
+            end
+        end
+        return
+    end
+    
+    -- Sync refresh command
+    if msg == "sync refresh" then
+        if not IGW_Sync then
+            DEFAULT_CHAT_FRAME:AddMessage("|cffff0000[IGW]|r Sync module not loaded")
+            return
+        end
+        
+        IGW_Sync:RequestDataSync()
+        return
+    end
+    
+    -- Announce command
+    if string.sub(msg, 1, 8) == "announce" then
+        if not IGW_Sync then
+            DEFAULT_CHAT_FRAME:AddMessage("|cffff0000[IGW]|r Sync module not loaded")
+            return
+        end
+        
+        local message = string.sub(msg, 10) -- Skip "announce "
+        if message and message ~= "" then
+            IGW_Sync:PostAnnouncement(message, "normal")
+            DEFAULT_CHAT_FRAME:AddMessage("|cff00ff00[IGW]|r Announcement sent to guild")
+        else
+            DEFAULT_CHAT_FRAME:AddMessage("|cffff0000[IGW]|r Usage: /igw announce <message>")
+        end
+        return
+    end
+    
+    -- Clear announcements command (local only)
+    if msg == "clear announcements" or msg == "clearann" then
+        if not IGW_Sync then
+            DEFAULT_CHAT_FRAME:AddMessage("|cffff0000[IGW]|r Sync module not loaded")
+            return
+        end
+        
+        IGW_Sync:ClearAnnouncements()
+        DEFAULT_CHAT_FRAME:AddMessage("|cff00ff00[IGW]|r All announcements cleared (local only)")
+        
+        -- Refresh Page 5 if it's open
+        if IGW.infoFrame and IGW.infoFrame.currentPage == 5 then
+            IGW:UpdateEventsPage()
+        end
+        return
+    end
+    
+    -- Clear announcements guild-wide (officers only)
+    if msg == "clearann guild" or msg == "clear announcements guild" then
+        if not IGW_Sync then
+            DEFAULT_CHAT_FRAME:AddMessage("|cffff0000[IGW]|r Sync module not loaded")
+            return
+        end
+        
+        -- Check if player is an officer
+        if not IGW:IsOfficer() then
+            DEFAULT_CHAT_FRAME:AddMessage("|cffff0000[IGW]|r This command is only available to officers")
+            return
+        end
+        
+        IGW_Sync:ClearAnnouncementsGuildWide()
+        DEFAULT_CHAT_FRAME:AddMessage("|cff00ff00[IGW]|r Guild-wide announcement clear broadcast sent")
+        
+        -- Refresh Page 5 if it's open
+        if IGW.infoFrame and IGW.infoFrame.currentPage == 5 then
+            IGW:UpdateEventsPage()
+        end
+        return
+    end
+    
+    -- Standard commands
     if msg == "" or msg == "show" or msg == "toggle" then
         IGW:ToggleWindow()
     elseif msg == "hide" then
@@ -4350,7 +4696,705 @@ SlashCmdList["IMPROVEDGUILDWINDOW"] = function(msg)
         DEFAULT_CHAT_FRAME:AddMessage("/igw show - Show window")
         DEFAULT_CHAT_FRAME:AddMessage("/igw hide - Hide window")
         DEFAULT_CHAT_FRAME:AddMessage("/igw debug - Show debug info")
+        DEFAULT_CHAT_FRAME:AddMessage("/igw sync status - Show sync status")
+        DEFAULT_CHAT_FRAME:AddMessage("/igw sync refresh - Request data sync")
+        DEFAULT_CHAT_FRAME:AddMessage("/igw announce <msg> - Post guild announcement")
+        DEFAULT_CHAT_FRAME:AddMessage("/igw clearann - Clear all announcements (local)")
+        DEFAULT_CHAT_FRAME:AddMessage("/igw clearann guild - Clear guild announcements (officers)")
     end
+end
+
+-- Update Page 5 - Announcements & Addon Users
+function IGW:UpdateEventsPage()
+    if not IGW_Sync then return end
+    if not IGW.infoFrame or not IGW.infoFrame.content5 then return end
+    
+    local content5 = IGW.infoFrame.content5
+    
+    -- Mark announcements as read only when page is visible
+    if IGW.infoFrame:IsVisible() and IGW.infoFrame.currentPage == 5 then
+        self:MarkAnnouncementsAsRead()
+    end
+    
+    -- Clear existing content
+    if content5.children then
+        for _, child in ipairs(content5.children) do
+            child:Hide()
+        end
+    end
+    content5.children = {}
+    
+    local yOffset = -10
+    
+    -- Sync status
+    local status = IGW_Sync:GetSyncStatus()
+    local statusText = content5:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+    statusText:SetPoint("TOP", content5, "TOP", 0, yOffset)
+    statusText:SetWidth(220)
+    statusText:SetTextColor(0.7, 0.7, 0.7)
+    statusText:SetText(status.peers .. " addon users online")
+    table.insert(content5.children, statusText)
+    yOffset = yOffset - 15
+    
+    -- Title: Recent Announcements
+    local annTitle = content5:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    annTitle:SetPoint("TOP", content5, "TOP", 0, yOffset)
+    annTitle:SetWidth(220)
+    annTitle:SetText("Recent Announcements")
+    annTitle:SetTextColor(1, 0.82, 0)
+    table.insert(content5.children, annTitle)
+    yOffset = yOffset - 14
+    
+    -- Get recent announcements (only 1 newest)
+    local announcements = IGW_Sync:GetAnnouncements(1)
+    
+    if table.getn(announcements) == 0 then
+        local noAnn = content5:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        noAnn:SetPoint("TOP", content5, "TOP", 0, yOffset)
+        noAnn:SetWidth(220)
+        noAnn:SetText("No recent announcements")
+        noAnn:SetTextColor(0.6, 0.6, 0.6)
+        table.insert(content5.children, noAnn)
+        yOffset = yOffset - 12
+    else
+        local ann = announcements[1]
+        
+        -- Author and time
+        local annHeader = content5:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        annHeader:SetPoint("TOP", content5, "TOP", 0, yOffset)
+        annHeader:SetWidth(220)
+        annHeader:SetText(ann.author .. " - " .. date("%m/%d", ann.timestamp))
+        annHeader:SetTextColor(0.7, 0.7, 1)
+        table.insert(content5.children, annHeader)
+        yOffset = yOffset - 11
+        
+        -- Message (truncate to 120 chars for compactness)
+        local message = ann.message
+        if string.len(message) > 120 then
+            message = string.sub(message, 1, 117) .. "..."
+        end
+        
+        local annMsg = content5:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        annMsg:SetPoint("TOP", content5, "TOP", 0, yOffset)
+        annMsg:SetWidth(220)
+        annMsg:SetText(message)
+        annMsg:SetTextColor(1, 1, 1)
+        table.insert(content5.children, annMsg)
+        
+        -- Fixed space for announcement (120 chars = ~3 lines * 11px)
+        yOffset = yOffset - 33
+    end
+    
+    yOffset = yOffset - 8
+    
+    -- Title: Raid Schedule
+    local raidTitle = content5:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    raidTitle:SetPoint("TOP", content5, "TOP", 0, yOffset)
+    raidTitle:SetWidth(220)
+    raidTitle:SetText("Raid Schedule")
+    raidTitle:SetTextColor(1, 0.82, 0)
+    table.insert(content5.children, raidTitle)
+    yOffset = yOffset - 14
+    
+    -- Get raid schedule from sync data
+    local raidSchedule = {}
+    if IGW_Sync.data and IGW_Sync.data.raidSchedule then
+        -- Make sure it's a table, not a string
+        if type(IGW_Sync.data.raidSchedule) == "table" then
+            raidSchedule = IGW_Sync.data.raidSchedule
+        end
+    end
+    
+    -- Days of the week
+    local days = {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"}
+    
+    for _, day in ipairs(days) do
+        local raids = raidSchedule[day]
+        
+        -- Day name
+        local dayText = content5:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        dayText:SetPoint("TOP", content5, "TOP", 0, yOffset)
+        dayText:SetWidth(220)
+        dayText:SetJustifyH("LEFT")
+        dayText:SetText(day .. ":")
+        dayText:SetTextColor(0.9, 0.9, 0.5)
+        table.insert(content5.children, dayText)
+        yOffset = yOffset - 12
+        
+        -- Show up to 2 raids per day
+        local hasRaids = false
+        if raids then
+            for raidNum = 1, 2 do
+                if raids[raidNum] and raids[raidNum].name and raids[raidNum].name ~= "" then
+                    hasRaids = true
+                    local raidInfo = content5:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+                    raidInfo:SetPoint("TOP", content5, "TOP", 5, yOffset)
+                    raidInfo:SetWidth(215)
+                    raidInfo:SetJustifyH("LEFT")
+                    
+                    local text = "  " .. raids[raidNum].name
+                    if raids[raidNum].time and raids[raidNum].time ~= "" then
+                        text = text .. " @ " .. raids[raidNum].time
+                    end
+                    raidInfo:SetText(text)
+                    raidInfo:SetTextColor(0.8, 1, 0.8)
+                    table.insert(content5.children, raidInfo)
+                    yOffset = yOffset - 11
+                else
+                    -- Reserve space even for empty raid slots
+                    yOffset = yOffset - 11
+                end
+            end
+        else
+            -- No raids for this day, reserve space for 2 empty slots
+            yOffset = yOffset - 22
+        end
+        
+        -- If no raids, show "No raid scheduled"
+        if not hasRaids then
+            local noRaid = content5:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            noRaid:SetPoint("TOP", content5, "TOP", 5, yOffset + 22)
+            noRaid:SetWidth(215)
+            noRaid:SetJustifyH("LEFT")
+            noRaid:SetText("  No raid scheduled")
+            noRaid:SetTextColor(0.5, 0.5, 0.5)
+            table.insert(content5.children, noRaid)
+        end
+        
+        yOffset = yOffset - 2 -- Small gap between days
+    end
+    
+    -- Edit button for officers only
+    if self:IsOfficer() then
+        yOffset = yOffset - 10
+        local editBtn = CreateFrame("Button", nil, content5, "UIPanelButtonTemplate")
+        editBtn:SetWidth(100)
+        editBtn:SetHeight(20)
+        editBtn:SetPoint("TOP", content5, "TOP", -55, yOffset)
+        editBtn:SetText("Edit Schedule")
+        editBtn:SetScript("OnClick", function()
+            IGW:ShowRaidScheduleEditor()
+        end)
+        table.insert(content5.children, editBtn)
+        
+        local announceBtn = CreateFrame("Button", nil, content5, "UIPanelButtonTemplate")
+        announceBtn:SetWidth(100)
+        announceBtn:SetHeight(20)
+        announceBtn:SetPoint("TOP", content5, "TOP", 55, yOffset)
+        announceBtn:SetText("Announce")
+        announceBtn:SetScript("OnClick", function()
+            IGW:ShowAnnouncementDialog()
+        end)
+        table.insert(content5.children, announceBtn)
+    end
+end
+
+
+-- Show raid schedule editor dialog
+function IGW:ShowRaidScheduleEditor()
+    if not IGW_Sync then return end
+    
+    -- Create dialog if needed
+    if not self.raidScheduleDialog then
+        local dialog = CreateFrame("Frame", "IGW_RaidScheduleDialog", UIParent)
+        dialog:SetWidth(450)
+        dialog:SetHeight(660)
+        dialog:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+        dialog:SetFrameStrata("DIALOG")
+        
+        -- Match main window background style
+        dialog:SetBackdrop({
+            edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+            edgeSize = 32,
+            insets = { left = 11, right = 12, top = 12, bottom = 11 }
+        })
+        dialog:SetBackdropBorderColor(1, 1, 1, 1)
+        
+        -- Create solid background texture (inside the border)
+        local bgTexture = dialog:CreateTexture(nil, "BACKGROUND")
+        bgTexture:SetPoint("TOPLEFT", dialog, "TOPLEFT", 11, -12)
+        bgTexture:SetPoint("BOTTOMRIGHT", dialog, "BOTTOMRIGHT", -12, 11)
+        
+        -- Use saved color or default to dark grey
+        local bgColor = {r = 0.15, g = 0.15, b = 0.15}
+        if ImprovedGuildWindowDB and ImprovedGuildWindowDB.bgColor then
+            bgColor = ImprovedGuildWindowDB.bgColor
+        end
+        bgTexture:SetTexture(bgColor.r, bgColor.g, bgColor.b, 1)
+        
+        dialog:EnableMouse(true)
+        dialog:SetMovable(true)
+        dialog:RegisterForDrag("LeftButton")
+        dialog:SetScript("OnDragStart", function() this:StartMoving() end)
+        dialog:SetScript("OnDragStop", function() this:StopMovingOrSizing() end)
+        
+        -- Close on Escape key
+        dialog:EnableKeyboard(true)
+        dialog:SetScript("OnKeyDown", function()
+            if arg1 == "ESCAPE" then
+                this:Hide()
+            end
+        end)
+        
+        -- Title
+        local title = dialog:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+        title:SetPoint("TOP", dialog, "TOP", 0, -20)
+        title:SetText("Edit Raid Schedule")
+        
+        -- Instruction text
+        local instructions = dialog:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        instructions:SetPoint("TOP", title, "BOTTOM", 0, -8)
+        instructions:SetText("Up to 2 raids per day")
+        instructions:SetTextColor(0.7, 0.7, 0.7)
+        
+        -- Format example
+        local example = dialog:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        example:SetPoint("TOP", instructions, "BOTTOM", 0, -5)
+        example:SetText("Example: MC   8pm ST")
+        example:SetTextColor(0.5, 0.8, 0.5)
+        
+        -- Create scroll frame for days
+        local scrollFrame = CreateFrame("ScrollFrame", nil, dialog)
+        scrollFrame:SetPoint("TOPLEFT", dialog, "TOPLEFT", 20, -80)
+        scrollFrame:SetPoint("BOTTOMRIGHT", dialog, "BOTTOMRIGHT", -35, 60)
+        
+        local scrollChild = CreateFrame("Frame", nil, scrollFrame)
+        scrollChild:SetWidth(400)
+        scrollChild:SetHeight(650)
+        scrollFrame:SetScrollChild(scrollChild)
+        
+        -- Scrollbar
+        local scrollBar = CreateFrame("Slider", nil, scrollFrame)
+        scrollBar:SetPoint("TOPRIGHT", scrollFrame, "TOPRIGHT", 15, -16)
+        scrollBar:SetPoint("BOTTOMRIGHT", scrollFrame, "BOTTOMRIGHT", 15, 16)
+        scrollBar:SetWidth(16)
+        scrollBar:SetOrientation("VERTICAL")
+        scrollBar:SetThumbTexture("Interface\\Buttons\\UI-ScrollBar-Knob")
+        scrollBar:SetMinMaxValues(0, 250)
+        scrollBar:SetValueStep(20)
+        scrollBar:SetValue(0)
+        scrollBar:SetScript("OnValueChanged", function()
+            scrollFrame:SetVerticalScroll(this:GetValue())
+        end)
+        
+        -- Helper function to filter characters
+        local function FilterText(text, allowedChars)
+            -- Remove disallowed characters: ; : ,
+            text = string.gsub(text, "[;:,]", "")
+            return text
+        end
+        
+        -- Day inputs
+        local days = {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"}
+        dialog.inputs = {}
+        dialog.allInputs = {} -- Flat list for tab navigation
+        local yOffset = -10
+        
+        for dayIndex, day in ipairs(days) do
+            -- Day label (centered)
+            local label = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+            label:SetPoint("TOP", scrollChild, "TOP", 0, yOffset)
+            label:SetText(day)
+            label:SetTextColor(1, 0.82, 0)
+            yOffset = yOffset - 18
+            
+            dialog.inputs[day] = {}
+            
+            -- Two raids per day
+            for raidNum = 1, 2 do
+                -- Container for this raid's inputs (for centering)
+                local raidLabel = scrollChild:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+                raidLabel:SetPoint("TOP", scrollChild, "TOP", -105, yOffset - 3)
+                raidLabel:SetText("Raid " .. raidNum .. ":")
+                raidLabel:SetTextColor(0.7, 0.7, 0.7)
+                
+                -- Raid name input (centered)
+                local nameInput = CreateFrame("EditBox", nil, scrollChild)
+                nameInput:SetWidth(120)
+                nameInput:SetHeight(20)
+                nameInput:SetPoint("TOP", scrollChild, "TOP", -25, yOffset)
+                nameInput:SetAutoFocus(false)
+                nameInput:SetMaxLetters(30)
+                
+                -- Backdrop for name input
+                nameInput:SetBackdrop({
+                    bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+                    edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+                    tile = true, tileSize = 16, edgeSize = 16,
+                    insets = { left = 4, right = 4, top = 4, bottom = 4 }
+                })
+                nameInput:SetBackdropColor(0.1, 0.1, 0.1, 1)
+                nameInput:SetBackdropBorderColor(0.4, 0.4, 0.4, 1)
+                
+                -- Font for input
+                nameInput:SetFontObject(GameFontHighlightSmall)
+                nameInput:SetTextInsets(5, 5, 0, 0)
+                
+                -- Character filtering
+                nameInput:SetScript("OnTextChanged", function()
+                    local text = this:GetText()
+                    local filtered = FilterText(text)
+                    if text ~= filtered then
+                        this:SetText(filtered)
+                    end
+                end)
+                
+                -- Tab navigation and shortcuts
+                nameInput:SetScript("OnTabPressed", function()
+                    local nextInput = dialog.allInputs[this.tabIndex + 1]
+                    if nextInput then
+                        nextInput:SetFocus()
+                    end
+                end)
+                nameInput:SetScript("OnEscapePressed", function() this:ClearFocus() end)
+                nameInput:SetScript("OnEnterPressed", function() 
+                    local nextInput = dialog.allInputs[this.tabIndex + 1]
+                    if nextInput then
+                        nextInput:SetFocus()
+                    else
+                        this:ClearFocus()
+                    end
+                end)
+                nameInput:SetScript("OnEditFocusGained", function()
+                    this:SetBackdropBorderColor(0.8, 0.8, 1, 1)
+                    this:HighlightText()
+                end)
+                nameInput:SetScript("OnEditFocusLost", function()
+                    this:SetBackdropBorderColor(0.4, 0.4, 0.4, 1)
+                    this:HighlightText(0, 0)
+                end)
+                
+                -- Time input (centered next to name)
+                local timeInput = CreateFrame("EditBox", nil, scrollChild)
+                timeInput:SetWidth(80)
+                timeInput:SetHeight(20)
+                timeInput:SetPoint("LEFT", nameInput, "RIGHT", 10, 0)
+                timeInput:SetAutoFocus(false)
+                timeInput:SetMaxLetters(15)
+                
+                -- Backdrop for time input
+                timeInput:SetBackdrop({
+                    bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+                    edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+                    tile = true, tileSize = 16, edgeSize = 16,
+                    insets = { left = 4, right = 4, top = 4, bottom = 4 }
+                })
+                timeInput:SetBackdropColor(0.1, 0.1, 0.1, 1)
+                timeInput:SetBackdropBorderColor(0.4, 0.4, 0.4, 1)
+                
+                -- Font for input
+                timeInput:SetFontObject(GameFontHighlightSmall)
+                timeInput:SetTextInsets(5, 5, 0, 0)
+                
+                -- Character filtering
+                timeInput:SetScript("OnTextChanged", function()
+                    local text = this:GetText()
+                    local filtered = FilterText(text)
+                    if text ~= filtered then
+                        this:SetText(filtered)
+                    end
+                end)
+                
+                -- Tab navigation and shortcuts
+                timeInput:SetScript("OnTabPressed", function()
+                    local nextInput = dialog.allInputs[this.tabIndex + 1]
+                    if nextInput then
+                        nextInput:SetFocus()
+                    end
+                end)
+                timeInput:SetScript("OnEscapePressed", function() this:ClearFocus() end)
+                timeInput:SetScript("OnEnterPressed", function() 
+                    local nextInput = dialog.allInputs[this.tabIndex + 1]
+                    if nextInput then
+                        nextInput:SetFocus()
+                    else
+                        this:ClearFocus()
+                    end
+                end)
+                timeInput:SetScript("OnEditFocusGained", function()
+                    this:SetBackdropBorderColor(0.8, 0.8, 1, 1)
+                    this:HighlightText()
+                end)
+                timeInput:SetScript("OnEditFocusLost", function()
+                    this:SetBackdropBorderColor(0.4, 0.4, 0.4, 1)
+                    this:HighlightText(0, 0)
+                end)
+                
+                dialog.inputs[day][raidNum] = {
+                    name = nameInput,
+                    time = timeInput
+                }
+                
+                -- Add to flat list for tab navigation
+                table.insert(dialog.allInputs, nameInput)
+                nameInput.tabIndex = table.getn(dialog.allInputs)
+                table.insert(dialog.allInputs, timeInput)
+                timeInput.tabIndex = table.getn(dialog.allInputs)
+                
+                yOffset = yOffset - 23
+            end
+            
+            yOffset = yOffset - 8
+        end
+        
+        -- Save button
+        local saveBtn = CreateFrame("Button", nil, dialog, "UIPanelButtonTemplate")
+        saveBtn:SetWidth(70)
+        saveBtn:SetHeight(22)
+        saveBtn:SetPoint("BOTTOM", dialog, "BOTTOM", -110, 20)
+        saveBtn:SetText("Save")
+        saveBtn:SetScript("OnClick", function()
+            IGW:SaveRaidSchedule()
+            dialog:Hide()
+        end)
+        
+        -- Clear Schedule button
+        local clearBtn = CreateFrame("Button", nil, dialog, "UIPanelButtonTemplate")
+        clearBtn:SetWidth(100)
+        clearBtn:SetHeight(22)
+        clearBtn:SetPoint("BOTTOM", dialog, "BOTTOM", 0, 20)
+        clearBtn:SetText("Clear Schedule")
+        clearBtn:SetScript("OnClick", function()
+            -- Clear all inputs
+            for day, raids in pairs(dialog.inputs) do
+                for raidNum, controls in pairs(raids) do
+                    controls.name:SetText("")
+                    controls.time:SetText("")
+                end
+            end
+            DEFAULT_CHAT_FRAME:AddMessage("|cff00ff00[IGW]|r Schedule cleared (not saved yet)")
+        end)
+        
+        -- Cancel button
+        local cancelBtn = CreateFrame("Button", nil, dialog, "UIPanelButtonTemplate")
+        cancelBtn:SetWidth(70)
+        cancelBtn:SetHeight(22)
+        cancelBtn:SetPoint("BOTTOM", dialog, "BOTTOM", 110, 20)
+        cancelBtn:SetText("Cancel")
+        cancelBtn:SetScript("OnClick", function()
+            dialog:Hide()
+        end)
+        
+        -- Close button
+        local closeBtn = CreateFrame("Button", nil, dialog, "UIPanelCloseButton")
+        closeBtn:SetPoint("TOPRIGHT", dialog, "TOPRIGHT", -5, -5)
+        
+        dialog:Hide()
+        self.raidScheduleDialog = dialog
+    end
+    
+    -- Populate with current schedule
+    local schedule = {}
+    if IGW_Sync.data and IGW_Sync.data.raidSchedule and type(IGW_Sync.data.raidSchedule) == "table" then
+        schedule = IGW_Sync.data.raidSchedule
+    end
+    
+    for day, raids in pairs(self.raidScheduleDialog.inputs) do
+        for raidNum, controls in pairs(raids) do
+            if schedule[day] and type(schedule[day]) == "table" and schedule[day][raidNum] then
+                controls.name:SetText(schedule[day][raidNum].name or "")
+                controls.time:SetText(schedule[day][raidNum].time or "")
+            else
+                controls.name:SetText("")
+                controls.time:SetText("")
+            end
+        end
+    end
+    
+    self.raidScheduleDialog:Show()
+end
+
+-- Save raid schedule
+function IGW:SaveRaidSchedule()
+    if not IGW_Sync or not self.raidScheduleDialog then return end
+    
+    local schedule = {}
+    
+    for day, raids in pairs(self.raidScheduleDialog.inputs) do
+        schedule[day] = {}
+        
+        for raidNum, controls in pairs(raids) do
+            local raidName = controls.name:GetText()
+            local time = controls.time:GetText()
+            
+            -- Only save if raid name is not empty
+            if raidName and raidName ~= "" then
+                schedule[day][raidNum] = {
+                    name = raidName,
+                    time = time or ""
+                }
+            end
+        end
+    end
+    
+    -- Save and broadcast
+    IGW_Sync:UpdateRaidSchedule(schedule)
+    
+    -- Refresh Page 5 if open
+    if IGW.infoFrame and IGW.infoFrame.currentPage == 5 then
+        IGW:UpdateEventsPage()
+    end
+    
+    DEFAULT_CHAT_FRAME:AddMessage("|cff00ff00[IGW]|r Raid schedule updated and broadcast to guild")
+end
+
+-- Show announcement dialog
+function IGW:ShowAnnouncementDialog()
+    if not IGW_Sync then return end
+    
+    -- Create dialog if needed
+    if not self.announcementDialog then
+        local dialog = CreateFrame("Frame", "IGW_AnnouncementDialog", UIParent)
+        dialog:SetWidth(350)
+        dialog:SetHeight(250)
+        dialog:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+        dialog:SetFrameStrata("DIALOG")
+        
+        -- Match main window background style
+        dialog:SetBackdrop({
+            edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
+            edgeSize = 32,
+            insets = { left = 11, right = 12, top = 12, bottom = 11 }
+        })
+        dialog:SetBackdropBorderColor(1, 1, 1, 1)
+        
+        -- Create solid background texture
+        local bgTexture = dialog:CreateTexture(nil, "BACKGROUND")
+        bgTexture:SetPoint("TOPLEFT", dialog, "TOPLEFT", 11, -12)
+        bgTexture:SetPoint("BOTTOMRIGHT", dialog, "BOTTOMRIGHT", -12, 11)
+        
+        local bgColor = {r = 0.15, g = 0.15, b = 0.15}
+        if ImprovedGuildWindowDB and ImprovedGuildWindowDB.bgColor then
+            bgColor = ImprovedGuildWindowDB.bgColor
+        end
+        bgTexture:SetTexture(bgColor.r, bgColor.g, bgColor.b, 1)
+        
+        dialog:EnableMouse(true)
+        dialog:SetMovable(true)
+        dialog:RegisterForDrag("LeftButton")
+        dialog:SetScript("OnDragStart", function() this:StartMoving() end)
+        dialog:SetScript("OnDragStop", function() this:StopMovingOrSizing() end)
+        
+        -- Close on Escape
+        dialog:EnableKeyboard(true)
+        dialog:SetScript("OnKeyDown", function()
+            if arg1 == "ESCAPE" then
+                this:Hide()
+            end
+        end)
+        
+        -- Title
+        local title = dialog:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+        title:SetPoint("TOP", dialog, "TOP", 0, -20)
+        title:SetText("Guild Announcement")
+        
+        -- Instruction
+        local instructions = dialog:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+        instructions:SetPoint("TOP", title, "BOTTOM", 0, -8)
+        instructions:SetText("Max 255 characters")
+        instructions:SetTextColor(0.7, 0.7, 0.7)
+        
+        -- Multi-line text input (ScrollFrame with EditBox)
+        local scrollFrame = CreateFrame("ScrollFrame", nil, dialog)
+        scrollFrame:SetPoint("TOP", instructions, "BOTTOM", 0, -10)
+        scrollFrame:SetWidth(310)
+        scrollFrame:SetHeight(90)
+        
+        -- Backdrop for text area
+        scrollFrame:SetBackdrop({
+            bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+            edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+            tile = true, tileSize = 16, edgeSize = 16,
+            insets = { left = 4, right = 4, top = 4, bottom = 4 }
+        })
+        scrollFrame:SetBackdropColor(0.1, 0.1, 0.1, 1)
+        scrollFrame:SetBackdropBorderColor(0.4, 0.4, 0.4, 1)
+        
+        -- Enable mouse on scrollframe so clicking anywhere focuses editbox
+        scrollFrame:EnableMouse(true)
+        scrollFrame:SetScript("OnMouseDown", function()
+            dialog.editBox:SetFocus()
+        end)
+        
+        local editBox = CreateFrame("EditBox", nil, scrollFrame)
+        editBox:SetWidth(300)
+        editBox:SetHeight(200)
+        editBox:SetMultiLine(true)
+        editBox:SetAutoFocus(false)
+        editBox:SetMaxLetters(255)
+        editBox:SetFontObject(GameFontHighlightSmall)
+        editBox:SetTextInsets(5, 5, 5, 5)
+        
+        scrollFrame:SetScrollChild(editBox)
+        
+        -- Make editbox usable
+        editBox:SetScript("OnEscapePressed", function() 
+            this:ClearFocus() 
+        end)
+        editBox:SetScript("OnEditFocusGained", function()
+            scrollFrame:SetBackdropBorderColor(0.8, 0.8, 1, 1)
+            this:HighlightText(0, 0)
+        end)
+        editBox:SetScript("OnEditFocusLost", function()
+            scrollFrame:SetBackdropBorderColor(0.4, 0.4, 0.4, 1)
+        end)
+        
+        dialog.editBox = editBox
+        
+        -- Send button
+        local sendBtn = CreateFrame("Button", nil, dialog, "UIPanelButtonTemplate")
+        sendBtn:SetWidth(80)
+        sendBtn:SetHeight(22)
+        sendBtn:SetPoint("BOTTOM", dialog, "BOTTOM", -85, 20)
+        sendBtn:SetText("Send")
+        sendBtn:SetScript("OnClick", function()
+            local text = dialog.editBox:GetText()
+            if text and text ~= "" then
+                if IGW_Sync then
+                    IGW_Sync:PostAnnouncement(text)
+                    DEFAULT_CHAT_FRAME:AddMessage("|cff00ff00[IGW]|r Announcement sent to guild")
+                    dialog.editBox:SetText("")
+                    dialog:Hide()
+                end
+            else
+                DEFAULT_CHAT_FRAME:AddMessage("|cffff0000[IGW]|r Please enter an announcement")
+            end
+        end)
+        
+        -- Clear All button
+        local clearAllBtn = CreateFrame("Button", nil, dialog, "UIPanelButtonTemplate")
+        clearAllBtn:SetWidth(80)
+        clearAllBtn:SetHeight(22)
+        clearAllBtn:SetPoint("BOTTOM", dialog, "BOTTOM", 0, 20)
+        clearAllBtn:SetText("Clear All")
+        clearAllBtn:SetScript("OnClick", function()
+            if IGW_Sync then
+                IGW_Sync:ClearAnnouncementsGuildWide()
+                DEFAULT_CHAT_FRAME:AddMessage("|cff00ff00[IGW]|r All announcements cleared")
+            end
+        end)
+        
+        -- Cancel button
+        local cancelBtn = CreateFrame("Button", nil, dialog, "UIPanelButtonTemplate")
+        cancelBtn:SetWidth(80)
+        cancelBtn:SetHeight(22)
+        cancelBtn:SetPoint("BOTTOM", dialog, "BOTTOM", 85, 20)
+        cancelBtn:SetText("Cancel")
+        cancelBtn:SetScript("OnClick", function()
+            dialog:Hide()
+        end)
+        
+        -- Close button
+        local closeBtn = CreateFrame("Button", nil, dialog, "UIPanelCloseButton")
+        closeBtn:SetPoint("TOPRIGHT", dialog, "TOPRIGHT", -5, -5)
+        
+        dialog:Hide()
+        self.announcementDialog = dialog
+    end
+    
+    -- Clear previous text
+    self.announcementDialog.editBox:SetText("")
+    self.announcementDialog:Show()
 end
 
 -- Global entry point for other addon files (e.g. calendar switching back)
