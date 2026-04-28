@@ -70,9 +70,56 @@ When clicking on a member, shows:
 
 ## Installation
 
-1. Extract the `ImprovedGuildWindow` folder to your `Interface/AddOns` directory
-2. Restart World of Warcraft or reload UI (`/reload`)
-3. Open with `/igw` or `/improvedguildwindow`
+### Method 1: Git Addons Manager (Recommended)
+
+If you're using a Git-based addon manager:
+
+1. Add this repository to your addon manager
+2. The addon will automatically install to your `Interface/AddOns` directory
+3. Restart World of Warcraft or reload UI with `/reload`
+4. Type `/igw` to open the addon
+
+### Method 2: Manual Installation
+
+1. **Download** the latest release (ImprovedGuildWindow.zip)
+2. **Extract** the zip file - you should see a folder named `ImprovedGuildWindow`
+3. **Locate** your WoW installation directory:
+   - **Windows:** `C:\Program Files (x86)\World of Warcraft\_classic_\` or your custom installation path
+   - **Mac:** `/Applications/World of Warcraft/_classic_/`
+   - **Linux:** Typically `~/.wine/drive_c/Program Files (x86)/World of Warcraft/_classic_/`
+4. **Navigate** to the `Interface\AddOns` folder inside your WoW directory
+   - Full path example: `C:\Program Files (x86)\World of Warcraft\_classic_\Interface\AddOns`
+5. **Copy** the `ImprovedGuildWindow` folder into the `AddOns` directory
+6. **Verify** the structure looks like this:
+   ```
+   Interface/AddOns/ImprovedGuildWindow/
+   ├── Bindings.xml
+   ├── IGW_Sync.lua
+   ├── IGW_SyncUI_Example.lua
+   ├── ImprovedGuildWindow.lua
+   ├── ImprovedGuildWindow.toc
+   └── README.md
+   ```
+7. **Launch** World of Warcraft (or `/reload` if already running)
+8. **Verify** installation:
+   - At character selection, click "AddOns" button (bottom-left)
+   - Look for "Improved Guild Window" in the list
+   - Make sure it's checked/enabled
+9. **Open** the addon with `/igw` or `/improvedguildwindow`
+
+### Troubleshooting Installation
+
+**Addon not appearing in game?**
+- Verify the folder name is exactly `ImprovedGuildWindow` (no extra spaces or characters)
+- Check that `ImprovedGuildWindow.toc` is present in the folder
+- Make sure you're looking in the correct WoW installation (Classic/WotLK, not Retail)
+- Try deleting `Cache` and `WTF` folders (backup your settings first!)
+
+**Addon listed but won't load?**
+- Check the addon list at character selection - ensure it's enabled
+- Look for error messages when logging in
+- Verify all files were extracted (should have 6 files)
+- Make sure your game version is 3.3.5 (WotLK)
 
 ## Usage
 
