@@ -1,9 +1,10 @@
-## Interface: 11200
+## Interface: 30300
 ## Title: Improved Guild Window
-## Notes: Enhanced guild management for World of Warcraft 1.12.1 (Turtle WoW)
+## Notes: Enhanced guild management for World of Warcraft 3.3.5 (WotLK)
 ## Author: Olzon
 ## Version: 3.1
-## SavedVariables: ImprovedGuildWindowDB
+## SavedVariables: ImprovedGuildWindowDB, IGW_SyncDB
 
-Bindings.xml
 ImprovedGuildWindow.lua
+Bindings.xml
+## IGW_Sync.lua
