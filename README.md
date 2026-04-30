@@ -141,10 +141,34 @@ Configure various options including:
 - Window movement permissions
 - Display preferences
 - Filter defaults
+- **Smart Notifications** - Get notified when:
+  - Officers log in
+  - Crafters with professions in notes log in
+  - Guild members are in your current area (when you enter a new zone)
+
+### Smart Notifications
+Receive helpful chat notifications to stay connected with your guild:
+
+- **Officer Login** - Get notified when officers log in: `[GuildName] Officer PlayerName is now online`
+- **Crafter Online** - Know when crafters are available: `[GuildName] PlayerName (Alchemy) is now online`
+  - Automatically detects professions in member notes (Alchemy, Blacksmithing, Enchanting, Engineering, Jewelcrafting, Leatherworking, Tailoring)
+- **Members in Zone** - See who's in your area when you enter a new zone:
+  - Single member: `[GuildName] PlayerName is in Stormwind`
+  - Multiple members: `[GuildName] 5 guild members are in Stormwind`
+  - Only triggers once per zone entry (no spam)
+
+All notifications can be toggled on/off individually in the Options menu.
 
 ## Technical Details
 
 **Compatibility:** World of Warcraft 3.3.5 (Wrath of the Lich King)
+
+**Performance Optimizations:**
+- Frame pooling system (reuses UI frames instead of recreating them)
+- Event throttling (roster updates limited to once per second)
+- Conditional updates (only updates visible windows)
+- Zone notifications event-driven via ZONE_CHANGED_NEW_AREA
+- Optimized for guilds of any size with minimal memory footprint
 
 **Migration from 1.12.1:**
 This addon was originally designed for WoW 1.12.1 (Vanilla) and has been fully migrated to 3.3.5 with the following major updates:

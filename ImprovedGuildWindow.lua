@@ -21,6 +21,13 @@ local filterRank = -1
 local showOffline = true
 local currentTab = "details"
 
+-- Notification tracking
+local notificationState = {
+    onlineMembers = {},      -- Track who's currently online
+    lastZone = "",           -- Track player's last zone
+    crafterProfessions = {}  -- Cache of member professions
+}
+
 -- Configuration: Officer rank threshold
 -- rankIndex: 0=Guild Master, 1-9=other ranks
 -- Members with rankIndex <= this value are considered "officers"
@@ -462,13 +469,27 @@ function IGW:InitializeSavedVariables()
             sortAscending = true,
             showOffline = true,
             opacity = 1.0,
-            bgColor = {r = 0.15, g = 0.15, b = 0.15}  -- Default dark grey
+            bgColor = {r = 0.15, g = 0.15, b = 0.15},  -- Default dark grey
+            notifications = {
+                officerLogin = true,
+                crafterOnline = true,
+                membersInZone = true
+            }
         }
     end
     
     -- Ensure bgColor exists (for existing saved variables)
     if not ImprovedGuildWindowDB.bgColor then
         ImprovedGuildWindowDB.bgColor = {r = 0.15, g = 0.15, b = 0.15}
+    end
+    
+    -- Ensure notifications table exists
+    if not ImprovedGuildWindowDB.notifications then
+        ImprovedGuildWindowDB.notifications = {
+            officerLogin = true,
+            crafterOnline = true,
+            membersInZone = true
+        }
     end
     
     -- Load saved opacity or use default
@@ -2105,6 +2126,7 @@ function IGW:RegisterEvents()
     eventFrame:RegisterEvent("PLAYER_LOGIN")
     eventFrame:RegisterEvent("PLAYER_GUILD_UPDATE")
     eventFrame:RegisterEvent("GUILD_ROSTER_UPDATE")
+    eventFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
     
     -- Throttle roster updates to prevent spam
     local lastUpdate = 0
@@ -2119,6 +2141,11 @@ function IGW:RegisterEvents()
             if now - lastUpdate >= UPDATE_THROTTLE then
                 lastUpdate = now
                 IGW:UpdateGuildData()
+            end
+        elseif event == "ZONE_CHANGED_NEW_AREA" then
+            -- Check for guild members in new zone
+            if ImprovedGuildWindowDB and ImprovedGuildWindowDB.notifications and ImprovedGuildWindowDB.notifications.membersInZone then
+                IGW:CheckZoneChange()
             end
         end
     end)
@@ -2136,6 +2163,9 @@ end
 
 -- Update guild data
 function IGW:UpdateGuildData()
+    local oldOnlineMembers = notificationState.onlineMembers
+    notificationState.onlineMembers = {}
+    
     rosterData = {}
     local numMembers = GetNumGuildMembers(true)
     
@@ -2169,6 +2199,21 @@ function IGW:UpdateGuildData()
             daysOffline = daysOffline,
             hoursOffline = hoursOffline
         })
+        
+        -- Track online members for notifications
+        if online and name then
+            notificationState.onlineMembers[name] = {
+                rankIndex = rankIndex,
+                zone = zone,
+                note = note,
+                class = class
+            }
+        end
+    end
+    
+    -- Check for notifications (skip first load)
+    if oldOnlineMembers and next(oldOnlineMembers) then
+        self:CheckNotifications(oldOnlineMembers)
     end
     
     -- Only update displays if windows are visible
@@ -4193,6 +4238,52 @@ function IGW:ToggleOptionsWindow()
         of.guildMembersRadio = guildMembersRadio
         of.memberDetailsRadio = memberDetailsRadio
         
+        -- Smart Notifications Section (right column, aligned with Default View)
+        local notifYOffset = -275  -- Aligned horizontally with Default View header
+        
+        -- Notifications Header
+        local notifHeader = content:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+        notifHeader:SetPoint("TOPLEFT", content, "TOPLEFT", 320, notifYOffset)
+        notifHeader:SetText("Smart Notifications")
+        notifYOffset = notifYOffset - 25  -- Match Default View spacing (was -30)
+        
+        -- Notification description
+        local notifDesc = content:CreateFontString(nil, "OVERLAY", "GameFontNormal")  -- Match Default View font (was GameFontNormalSmall)
+        notifDesc:SetPoint("TOPLEFT", content, "TOPLEFT", 330, notifYOffset)  -- 10px indent like Default View
+        notifDesc:SetWidth(270)
+        notifDesc:SetJustifyH("LEFT")
+        notifDesc:SetText("Receive chat notifications when:")
+        notifYOffset = notifYOffset - 25
+        
+        -- Officer Login checkbox
+        local officerCheckbox = CreateFrame("CheckButton", "IGW_OfficerNotifCheckbox", content, "UICheckButtonTemplate")
+        officerCheckbox:SetPoint("TOPLEFT", content, "TOPLEFT", 340, notifYOffset)  -- 20px indent like radio buttons
+        officerCheckbox:SetWidth(24)
+        officerCheckbox:SetHeight(24)
+        getglobal("IGW_OfficerNotifCheckboxText"):SetText("Officers log in")
+        officerCheckbox:SetChecked(ImprovedGuildWindowDB and ImprovedGuildWindowDB.notifications and ImprovedGuildWindowDB.notifications.officerLogin or false)
+        of.officerCheckbox = officerCheckbox
+        notifYOffset = notifYOffset - 25  -- Match radio button spacing (was -30)
+        
+        -- Crafter Online checkbox
+        local crafterCheckbox = CreateFrame("CheckButton", "IGW_CrafterNotifCheckbox", content, "UICheckButtonTemplate")
+        crafterCheckbox:SetPoint("TOPLEFT", content, "TOPLEFT", 340, notifYOffset)
+        crafterCheckbox:SetWidth(24)
+        crafterCheckbox:SetHeight(24)
+        getglobal("IGW_CrafterNotifCheckboxText"):SetText("Crafters with professions log in")
+        crafterCheckbox:SetChecked(ImprovedGuildWindowDB and ImprovedGuildWindowDB.notifications and ImprovedGuildWindowDB.notifications.crafterOnline or false)
+        of.crafterCheckbox = crafterCheckbox
+        notifYOffset = notifYOffset - 25  -- Match radio button spacing (was -30)
+        
+        -- Members in Zone checkbox
+        local zoneCheckbox = CreateFrame("CheckButton", "IGW_ZoneNotifCheckbox", content, "UICheckButtonTemplate")
+        zoneCheckbox:SetPoint("TOPLEFT", content, "TOPLEFT", 340, notifYOffset)
+        zoneCheckbox:SetWidth(24)
+        zoneCheckbox:SetHeight(24)
+        getglobal("IGW_ZoneNotifCheckboxText"):SetText("Members in your current area")
+        zoneCheckbox:SetChecked(ImprovedGuildWindowDB and ImprovedGuildWindowDB.notifications and ImprovedGuildWindowDB.notifications.membersInZone or false)
+        of.zoneCheckbox = zoneCheckbox
+        
         -- Save Button
         local saveBtn = CreateFrame("Button", nil, of, "UIPanelButtonTemplate")
         saveBtn:SetPoint("BOTTOM", of, "BOTTOM", 0, 15)
@@ -4301,6 +4392,14 @@ function IGW:SaveOptions()
     else
         ImprovedGuildWindowDB.defaultTab = "roster"
     end
+    
+    -- Save notification settings
+    if not ImprovedGuildWindowDB.notifications then
+        ImprovedGuildWindowDB.notifications = {}
+    end
+    ImprovedGuildWindowDB.notifications.officerLogin = of.officerCheckbox:GetChecked() == 1
+    ImprovedGuildWindowDB.notifications.crafterOnline = of.crafterCheckbox:GetChecked() == 1
+    ImprovedGuildWindowDB.notifications.membersInZone = of.zoneCheckbox:GetChecked() == 1
     
     DEFAULT_CHAT_FRAME:AddMessage("|cFF00FF00Options saved!|r")
 end
@@ -5146,6 +5245,96 @@ function IGW:ShowAnnouncementDialog()
     -- Clear previous text
     self.announcementDialog.editBox:SetText("")
     self.announcementDialog:Show()
+end
+
+-- Smart Notifications System
+function IGW:CheckNotifications(oldOnlineMembers)
+    if not ImprovedGuildWindowDB or not ImprovedGuildWindowDB.notifications then return end
+    local settings = ImprovedGuildWindowDB.notifications
+    
+    -- Get guild name for tag
+    local guildName = GetGuildInfo("player") or "IGW"
+    local guildTag = string.format("|cff00ff00[%s]|r", guildName)
+    
+    -- Check for members who just came online
+    for name, memberData in pairs(notificationState.onlineMembers) do
+        if not oldOnlineMembers[name] then
+            -- Someone just logged in
+            
+            -- 1. Officer Login Notification
+            if settings.officerLogin and memberData.rankIndex and memberData.rankIndex <= OFFICER_RANK_THRESHOLD then
+                DEFAULT_CHAT_FRAME:AddMessage(string.format("%s Officer |cffffd700%s|r is now online", guildTag, name))
+            end
+            
+            -- 2. Crafter Online Notification (check if they have professions in note)
+            if settings.crafterOnline and memberData.note then
+                local profession = self:FindProfessionInNote(memberData.note)
+                if profession then
+                    DEFAULT_CHAT_FRAME:AddMessage(string.format("%s %s (%s) is now online", guildTag, name, profession))
+                end
+            end
+        end
+    end
+end
+
+-- Helper: Find profession in note
+function IGW:FindProfessionInNote(note)
+    if not note then return nil end
+    local noteUpper = string.upper(note)
+    
+    local professions = {
+        {name="Alchemy", patterns={"ALCHEMY", "ALCH"}},
+        {name="Blacksmithing", patterns={"BLACKSMITHING", "BLACKSMITH", "BS"}},
+        {name="Enchanting", patterns={"ENCHANTING", "ENCH"}},
+        {name="Engineering", patterns={"ENGINEERING", "ENG"}},
+        {name="Jewelcrafting", patterns={"JEWELCRAFTING", "JC"}},
+        {name="Leatherworking", patterns={"LEATHERWORKING", "LW"}},
+        {name="Tailoring", patterns={"TAILORING", "TAILOR"}}
+    }
+    
+    for _, prof in ipairs(professions) do
+        for _, pattern in ipairs(prof.patterns) do
+            -- Look for pattern followed by a number (skill level)
+            if string.find(noteUpper, pattern .. "%s*:?%s*%d") or string.find(noteUpper, "%d+%s*" .. pattern) then
+                return prof.name
+            end
+        end
+    end
+    
+    return nil
+end
+
+-- Helper: Check if player changed zones and notify about guild members
+function IGW:CheckZoneChange()
+    local currentZone = GetZoneText()
+    if not currentZone or currentZone == "" then return end
+    
+    -- Only notify if zone actually changed
+    if currentZone ~= notificationState.lastZone then
+        notificationState.lastZone = currentZone
+        
+        -- Get guild name for tag
+        local guildName = GetGuildInfo("player") or "IGW"
+        local guildTag = string.format("|cff00ff00[%s]|r", guildName)
+        
+        -- Count guild members in this zone
+        local membersInZone = {}
+        for name, memberData in pairs(notificationState.onlineMembers) do
+            if memberData.zone == currentZone and name ~= UnitName("player") then
+                table.insert(membersInZone, name)
+            end
+        end
+        
+        -- Notify if 1+ guild members in the new zone
+        local count = table.getn(membersInZone)
+        if count > 0 then
+            if count == 1 then
+                DEFAULT_CHAT_FRAME:AddMessage(string.format("%s %s is in %s", guildTag, membersInZone[1], currentZone))
+            else
+                DEFAULT_CHAT_FRAME:AddMessage(string.format("%s %d guild members are in %s", guildTag, count, currentZone))
+            end
+        end
+    end
 end
 
 -- Global entry point for other addon files (e.g. calendar switching back)
