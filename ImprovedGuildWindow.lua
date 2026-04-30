@@ -2106,11 +2106,20 @@ function IGW:RegisterEvents()
     eventFrame:RegisterEvent("PLAYER_GUILD_UPDATE")
     eventFrame:RegisterEvent("GUILD_ROSTER_UPDATE")
     
-    eventFrame:SetScript("OnEvent", function()
+    -- Throttle roster updates to prevent spam
+    local lastUpdate = 0
+    local UPDATE_THROTTLE = 1.0  -- Only update once per second
+    
+    eventFrame:SetScript("OnEvent", function(self, event)
         if event == "PLAYER_LOGIN" then
             IGW:OnPlayerLogin()
         elseif event == "PLAYER_GUILD_UPDATE" or event == "GUILD_ROSTER_UPDATE" then
-            IGW:UpdateGuildData()
+            -- Throttle roster updates
+            local now = GetTime()
+            if now - lastUpdate >= UPDATE_THROTTLE then
+                lastUpdate = now
+                IGW:UpdateGuildData()
+            end
         end
     end)
 end
@@ -2162,7 +2171,10 @@ function IGW:UpdateGuildData()
         })
     end
     
-    self:UpdateRosterDisplay()
+    -- Only update displays if windows are visible
+    if frame and frame:IsVisible() then
+        self:UpdateRosterDisplay()
+    end
     if IGW.infoFrame and IGW.infoFrame:IsVisible() then
         IGW:UpdateGuildInfoWindow()
     end
@@ -2819,12 +2831,36 @@ function IGW:UpdateGuildInfoWindow()
     end
     
     -- Class distribution (from rosterData) - Bar Graph
-    -- Clear existing bars
-    if gf.classBars then
-        for _, bar in ipairs(gf.classBars) do
-            bar.frame:Hide()
-        end
+    -- Reuse existing bars instead of recreating them
+    if not gf.classBars then
         gf.classBars = {}
+    end
+    
+    -- Helper to get or create a bar
+    local function GetBar(index)
+        local bar = gf.classBars[index]
+        if not bar then
+            local barFrame = CreateFrame("Frame", nil, gf.classBarsContainer)
+            barFrame:SetHeight(12)
+            
+            local barBg = barFrame:CreateTexture(nil, "BACKGROUND")
+            barBg:SetAllPoints(barFrame)
+            barBg:SetTexture("Interface\\TargetingFrame\\UI-StatusBar")
+            
+            local label = barFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+            label:SetPoint("LEFT", barFrame, "LEFT", 3, 0)
+            label:SetTextColor(1, 1, 1)
+            
+            bar = {frame=barFrame, bg=barBg, label=label}
+            gf.classBars[index] = bar
+        end
+        bar.frame:Show()
+        return bar
+    end
+    
+    -- Hide all bars first
+    for _, bar in ipairs(gf.classBars) do
+        bar.frame:Hide()
     end
     
     local counts = {}
@@ -2849,7 +2885,7 @@ function IGW:UpdateGuildInfoWindow()
         return a.c > b.c
     end)
 
-    -- Create bars
+    -- Update bars
     local barHeight = 12
     local barGap = 2
     local maxBarWidth = 180
@@ -2858,39 +2894,55 @@ function IGW:UpdateGuildInfoWindow()
     for i, e in ipairs(entries) do
         if i > 10 then break end -- Limit to top 10 classes
         
-        local barFrame = CreateFrame("Frame", nil, gf.classBarsContainer)
-        barFrame:SetPoint("TOPLEFT", gf.classBarsContainer, "TOPLEFT", 0, yOffset)
-        barFrame:SetHeight(barHeight)
+        local bar = GetBar(i)
+        bar.frame:ClearAllPoints()
+        bar.frame:SetPoint("TOPLEFT", gf.classBarsContainer, "TOPLEFT", 0, yOffset)
         
         -- Calculate bar width based on count
         local barWidth = maxCount > 0 and (e.c / maxCount) * maxBarWidth or 0
-        barFrame:SetWidth(barWidth)
+        bar.frame:SetWidth(barWidth)
         
-        -- Bar background with class color
+        -- Update bar color
         local color = CLASS_COLORS[e.cls] or {r=0.5, g=0.5, b=0.5}
-        local barBg = barFrame:CreateTexture(nil, "BACKGROUND")
-        barBg:SetAllPoints(barFrame)
-        barBg:SetTexture("Interface\\TargetingFrame\\UI-StatusBar")
-        barBg:SetVertexColor(color.r, color.g, color.b, 0.8)
+        bar.bg:SetVertexColor(color.r, color.g, color.b, 0.8)
         
-        -- Label (class name and count)
-        local label = barFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-        label:SetPoint("LEFT", barFrame, "LEFT", 3, 0)
-        label:SetText(string.format("%s: %d", e.cls, e.c))
-        label:SetTextColor(1, 1, 1)
-        
-        table.insert(gf.classBars, {frame=barFrame, bg=barBg, label=label})
+        -- Update label
+        bar.label:SetText(string.format("%s: %d", e.cls, e.c))
         
         yOffset = yOffset - (barHeight + barGap)
     end
     
     -- Level 60 Class distribution - Bar Graph
-    -- Clear existing bars
-    if gf.class60Bars then
-        for _, bar in ipairs(gf.class60Bars) do
-            bar.frame:Hide()
-        end
+    -- Reuse existing bars instead of recreating them
+    if not gf.class60Bars then
         gf.class60Bars = {}
+    end
+    
+    -- Helper to get or create a level 60 bar
+    local function GetBar60(index)
+        local bar = gf.class60Bars[index]
+        if not bar then
+            local barFrame = CreateFrame("Frame", nil, gf.class60BarsContainer)
+            barFrame:SetHeight(12)
+            
+            local barBg = barFrame:CreateTexture(nil, "BACKGROUND")
+            barBg:SetAllPoints(barFrame)
+            barBg:SetTexture("Interface\\TargetingFrame\\UI-StatusBar")
+            
+            local label = barFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
+            label:SetPoint("LEFT", barFrame, "LEFT", 3, 0)
+            label:SetTextColor(1, 1, 1)
+            
+            bar = {frame=barFrame, bg=barBg, label=label}
+            gf.class60Bars[index] = bar
+        end
+        bar.frame:Show()
+        return bar
+    end
+    
+    -- Hide all bars first
+    for _, bar in ipairs(gf.class60Bars) do
+        bar.frame:Hide()
     end
     
     local counts60 = {}
@@ -2915,7 +2967,7 @@ function IGW:UpdateGuildInfoWindow()
         return a.c > b.c
     end)
 
-    -- Create level 60 bars
+    -- Update level 60 bars
     local barHeight60 = 12
     local barGap60 = 2
     local maxBarWidth60 = 180
@@ -2924,28 +2976,20 @@ function IGW:UpdateGuildInfoWindow()
     for i, e in ipairs(entries60) do
         if i > 10 then break end -- Limit to top 10 classes
         
-        local barFrame = CreateFrame("Frame", nil, gf.class60BarsContainer)
-        barFrame:SetPoint("TOPLEFT", gf.class60BarsContainer, "TOPLEFT", 0, yOffset60)
-        barFrame:SetHeight(barHeight60)
+        local bar = GetBar60(i)
+        bar.frame:ClearAllPoints()
+        bar.frame:SetPoint("TOPLEFT", gf.class60BarsContainer, "TOPLEFT", 0, yOffset60)
         
         -- Calculate bar width based on count
         local barWidth = maxCount60 > 0 and (e.c / maxCount60) * maxBarWidth60 or 0
-        barFrame:SetWidth(barWidth)
+        bar.frame:SetWidth(barWidth)
         
-        -- Bar background with class color
+        -- Update bar color
         local color = CLASS_COLORS[e.cls] or {r=0.5, g=0.5, b=0.5}
-        local barBg = barFrame:CreateTexture(nil, "BACKGROUND")
-        barBg:SetAllPoints(barFrame)
-        barBg:SetTexture("Interface\\TargetingFrame\\UI-StatusBar")
-        barBg:SetVertexColor(color.r, color.g, color.b, 0.8)
+        bar.bg:SetVertexColor(color.r, color.g, color.b, 0.8)
         
-        -- Label (class name and count)
-        local label = barFrame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall")
-        label:SetPoint("LEFT", barFrame, "LEFT", 3, 0)
-        label:SetText(string.format("%s: %d", e.cls, e.c))
-        label:SetTextColor(1, 1, 1)
-        
-        table.insert(gf.class60Bars, {frame=barFrame, bg=barBg, label=label})
+        -- Update label
+        bar.label:SetText(string.format("%s: %d", e.cls, e.c))
         
         yOffset60 = yOffset60 - (barHeight60 + barGap60)
     end
@@ -2981,11 +3025,30 @@ function IGW:UpdateCraftersPage()
     local content = gf.craftersContent
     if not content then return end
     
-    -- Clear existing content
-    local children = {content:GetChildren()}
-    for _, child in ipairs(children) do
-        child:Hide()
-        child:SetParent(nil)
+    -- Hide existing frames instead of destroying them (for reuse)
+    if not content.crafterFrames then
+        content.crafterFrames = {}
+    end
+    for _, frame in ipairs(content.crafterFrames) do
+        frame:Hide()
+    end
+    local frameIndex = 1  -- Track which frame we're reusing
+    
+    -- Helper function to get or create a frame
+    local function GetFrame(frameType, parent, template)
+        local frame = content.crafterFrames[frameIndex]
+        if not frame then
+            if frameType == "FontString" then
+                frame = parent:CreateFontString(nil, "OVERLAY", template)
+            else
+                frame = CreateFrame(frameType, nil, parent, template)
+            end
+            table.insert(content.crafterFrames, frame)
+        end
+        frameIndex = frameIndex + 1
+        frame:Show()
+        frame:ClearAllPoints()
+        return frame
     end
     
     -- Parse crafters from public notes (300+ skill level only)
@@ -3082,7 +3145,7 @@ function IGW:UpdateCraftersPage()
         local group = professionGroups[prof] or {} -- Use empty table if no crafters
         
         -- Profession subtitle (centered)
-        local subtitle = content:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+        local subtitle = GetFrame("FontString", content, "GameFontHighlight")
         subtitle:SetPoint("TOP", content, "TOP", 0, yOffset)
         subtitle:SetWidth(210)
         subtitle:SetJustifyH("CENTER")
@@ -3101,13 +3164,13 @@ function IGW:UpdateCraftersPage()
             
             if table.getn(lineMembers) > 0 then
                 -- Create container for this line
-                local lineContainer = CreateFrame("Frame", nil, content)
+                local lineContainer = GetFrame("Frame", content)
                 lineContainer:SetPoint("TOP", content, "TOP", 0, yOffset)
                 lineContainer:SetWidth(210)
                 lineContainer:SetHeight(14)
                 
                 -- Calculate actual text widths using a temporary FontString
-                local tempText = lineContainer:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+                local tempText = GetFrame("FontString", lineContainer, "GameFontHighlightSmall")
                 local totalWidth = 0
                 local buttonWidths = {}
                 
@@ -3134,12 +3197,12 @@ function IGW:UpdateCraftersPage()
                     -- Capture member name in local variable to avoid closure issues
                     local memberName = member.name
                     
-                    local nameBtn = CreateFrame("Button", nil, lineContainer)
+                    local nameBtn = GetFrame("Button", lineContainer)
                     nameBtn:SetPoint("LEFT", lineContainer, "LEFT", xOffset + 105, 0)
                     nameBtn:SetWidth(buttonWidths[idx])
                     nameBtn:SetHeight(14)
                     
-                    local nameText = nameBtn:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+                    local nameText = GetFrame("FontString", nameBtn, "GameFontHighlightSmall")
                     nameText:SetAllPoints(nameBtn)
                     nameText:SetJustifyH("LEFT")
                     nameText:SetText(string.format("|cFF00FF00%s|r", memberName))
@@ -3187,10 +3250,34 @@ function IGW:UpdateDungeonsPage()
     
     local content = gf.dungeonsContent
     
-    -- Clear existing dungeon entries
-    local children = {content:GetChildren()}
-    for _, child in ipairs(children) do
-        child:Hide()
+    -- Hide existing frames instead of destroying them (for reuse)
+    if not content.dungeonFrames then
+        content.dungeonFrames = {}
+    end
+    for _, frame in ipairs(content.dungeonFrames) do
+        frame:Hide()
+    end
+    local frameIndex = 1  -- Track which frame we're reusing
+    
+    -- Helper function to get or create a frame
+    local function GetFrame(frameType, parent, template)
+        local frame = content.dungeonFrames[frameIndex]
+        if not frame then
+            if frameType == "FontString" then
+                frame = parent:CreateFontString(nil, "OVERLAY", template)
+            elseif frameType == "Texture" then
+                frame = parent:CreateTexture(nil, "BACKGROUND")
+            else
+                frame = CreateFrame(frameType, nil, parent, template)
+            end
+            table.insert(content.dungeonFrames, frame)
+        end
+        frameIndex = frameIndex + 1
+        frame:Show()
+        if frame.ClearAllPoints then
+            frame:ClearAllPoints()
+        end
+        return frame
     end
     
     -- Get online members' levels
@@ -3202,7 +3289,7 @@ function IGW:UpdateDungeonsPage()
     end
     
     if table.getn(onlineLevels) == 0 then
-        local noData = content:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+        local noData = GetFrame("FontString", content, "GameFontHighlightSmall")
         noData:SetPoint("TOP", content, "TOP", 0, -20)
         noData:SetWidth(210)
         noData:SetJustifyH("CENTER")
@@ -3274,13 +3361,13 @@ function IGW:UpdateDungeonsPage()
         if displayed >= 22 then break end
         if dungeon.score >= 4 then  -- Only show dungeons with at least 4 matching members
             -- Create clickable button
-            local dungeonBtn = CreateFrame("Button", nil, content)
+            local dungeonBtn = GetFrame("Button", content)
             dungeonBtn:SetPoint("TOP", content, "TOP", 0, yOffset)
             dungeonBtn:SetWidth(210)
             dungeonBtn:SetHeight(16)
             
             -- Create text for the button
-            local btnText = dungeonBtn:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+            local btnText = GetFrame("FontString", dungeonBtn, "GameFontHighlightSmall")
             btnText:SetPoint("LEFT", dungeonBtn, "LEFT", 0, 0)
             btnText:SetWidth(210)
             btnText:SetJustifyH("LEFT")
@@ -3305,7 +3392,7 @@ function IGW:UpdateDungeonsPage()
                 colorCode, dungeon.name, dungeon.minLevel, dungeon.maxLevel, playerText))
             
             -- Highlight on hover
-            local highlight = dungeonBtn:CreateTexture(nil, "BACKGROUND")
+            local highlight = GetFrame("Texture", dungeonBtn)
             highlight:SetAllPoints()
             highlight:SetTexture(1, 1, 1, 0.1)
             dungeonBtn:SetHighlightTexture(highlight)
